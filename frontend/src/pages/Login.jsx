@@ -9,17 +9,26 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false); 
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault(); 
     try {
-      await axios.post('http://localhost:8080/api/login', {
+      // Note the new /auth/ URL
+      const response = await axios.post('http://localhost:8080/api/auth/login', {
         username: username,
         password: password
       });
-      navigate('/dashboard');
+      
+      if (response.data.status === true) {
+        // Save the role to local storage for the dashboard to use later
+        localStorage.setItem('userRole', response.data.role); 
+        setMessage("Success: " + response.data.message);
+        setTimeout(() => {
+          navigate('/plant-selection'); // Move to Step 1
+        }, 500);
+      }
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        setMessage("Error: Invalid credentials");
+        setMessage("Error: " + error.response.data.message); // Reads the new failure message
       } else {
         setMessage("Error: Cannot connect to server");
       }
