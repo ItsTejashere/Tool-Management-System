@@ -41,8 +41,8 @@ export default function Login() {
         
         <div className="text-center mb-4">
           <img 
-            src="./src/assets/et.png" 
-            alt="TMS Logo" 
+            src="./src/assets/etgp.jpg" 
+            alt="ETGP Logo" 
             className="mb-3"
             style={{ maxWidth: '150px' }} 
             onError={(e) => e.target.src = "https://via.placeholder.com/150?text=Logo"}
