@@ -41,7 +41,7 @@ This system utilizes a dual-table architecture for inventory to mimic enterprise
 * MySQL Server running locally on port 3306
 
 ### 1. Database Setup
-1. Create a MySQL database named `tms_db`.
+1. Create a MySQL database named `tool_management`.
 2. Run the provided SQL scripts in the `/database` folder to generate the schema for `tool`, `tool_instance`, `tool_movement`, `project`, and `department` tables.
 
 ### 2. Backend Setup (Spring Boot)
