@@ -25,7 +25,7 @@ public class UserRepository {
                 user.setId(rs.getInt("id"));
                 user.setUsername(rs.getString("username"));
                 user.setPassword(rs.getString("password"));
-                // Role line removed from here!
+                user.setRole(rs.getString("role")); // Extracts the ENUM
                 return user;
             }
         } catch (Exception e) {

@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth") // Updated to match spec: /api/auth/login
 @CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
@@ -16,14 +16,18 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginRequest) {
-
         User dbUser = userRepository.findByUsername(loginRequest.getUsername());
 
         if (dbUser != null && dbUser.getPassword().equals(loginRequest.getPassword())) {
-            // Simplified JSON response without the role
-            return ResponseEntity.ok("{\"message\": \"Login successful\"}");
+            // New Success Format
+            String jsonResponse = String.format(
+                    "{\"status\": true, \"message\": \"Login Successful\", \"role\": \"%s\"}",
+                    dbUser.getRole()
+            );
+            return ResponseEntity.ok(jsonResponse);
         }
 
-        return ResponseEntity.status(401).body("{\"error\": \"Invalid credentials\"}");
+        // New Failure Format
+        return ResponseEntity.status(401).body("{\"status\": false, \"message\": \"Invalid Credentials\"}");
     }
 }

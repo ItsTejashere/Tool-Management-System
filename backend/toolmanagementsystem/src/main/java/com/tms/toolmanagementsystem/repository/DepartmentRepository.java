@@ -21,7 +21,7 @@ public class DepartmentRepository {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, plantId); 
+            stmt.setInt(1, plantId);
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
