@@ -3,11 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function EditTool() {
-  const { id } = useParams(); // Grabs the tool ID from the URL
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole');
 
-  // Security Check
   useEffect(() => {
     if (userRole !== 'INVENTORY') navigate('/dashboard');
   }, [userRole, navigate]);
@@ -15,15 +14,17 @@ export default function EditTool() {
   const [formData, setFormData] = useState({
     toolCode: '',
     toolName: '',
+    drawingNumber: '',
     minimumQuantity: '',
-    totalQuantity: '',
     storageLocation: '',
     status: ''
   });
 
+  // 🚀 NEW: State to handle dynamic serial numbers during edit/restock
+  const [serials, setSerials] = useState([]);
   const [message, setMessage] = useState(null);
 
-  // FETCH the existing tool data when the page loads
+  // FETCH existing tool details
   useEffect(() => {
     const fetchToolDetails = async () => {
       try {
@@ -36,11 +37,45 @@ export default function EditTool() {
     fetchToolDetails();
   }, [id]);
 
-  // SAVE the changes
+  // Handle dynamic quantity changes for serial generation
+  const handleQuantityChange = (e) => {
+    let newQty = parseInt(e.target.value);
+    if (isNaN(newQty) || newQty < 0) newQty = 0;
+
+    setFormData({...formData, totalQuantity: newQty});
+
+    const newSerials = [...serials];
+    while (newSerials.length < newQty) {
+      newSerials.push('');
+    }
+    if (newSerials.length > newQty) {
+      newSerials.length = newQty;
+    }
+    setSerials(newSerials);
+  };
+
+  const handleSerialChange = (index, value) => {
+    const updatedSerials = [...serials];
+    updatedSerials[index] = value;
+    setSerials(updatedSerials);
+  };
+
+  // SAVE changes
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (serials.some(s => s.trim() === '')) {
+      alert("Please fill out all physical serial number fields!");
+      return;
+    }
+
     try {
-      const response = await axios.put(`http://localhost:8080/api/tools/${id}`, formData);
+      const payload = {
+        ...formData,
+        serials: serials // Send the new serials to Java!
+      };
+
+      const response = await axios.put(`http://localhost:8080/api/tools/${id}`, payload);
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });
         setTimeout(() => navigate('/dashboard'), 1000);
@@ -51,7 +86,7 @@ export default function EditTool() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 mb-5">
       <button className="btn btn-outline-secondary mb-4" onClick={() => navigate('/dashboard')}>
         ← Back to Dashboard
       </button>
@@ -79,6 +114,13 @@ export default function EditTool() {
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
 
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Drawing Number</label>
+              <input type="text" className="form-control bg-light"
+                value={formData.drawingNumber || ''} 
+                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            </div>
+
             <div className="row mb-3">
               <div className="col">
                 <label className="form-label fw-semibold">Min Quantity</label>
@@ -87,12 +129,38 @@ export default function EditTool() {
                   onChange={(e) => setFormData({...formData, minimumQuantity: e.target.value})} />
               </div>
               <div className="col">
-                <label className="form-label fw-semibold">Total Stock Capacity</label>
-                <input type="number" className="form-control bg-light" required min="1"
+                <label className="form-label fw-semibold text-primary">Total Stock Capacity</label>
+                <input type="number" className="form-control border-primary" required min="0"
                   value={formData.totalQuantity} 
-                  onChange={(e) => setFormData({...formData, totalQuantity: e.target.value})} />
+                  onChange={handleQuantityChange} />
               </div>
             </div>
+
+            {/* 🚀 DYNAMIC SERIAL INPUTS */}
+            {serials.length > 0 && (
+              <div className="mb-4 p-3 border rounded bg-light">
+                <label className="form-label fw-bold mb-3 text-primary">
+                  Enter Physical Serial Numbers ({serials.length} Required)
+                </label>
+                <div className="row g-2">
+                  {serials.map((serial, index) => (
+                    <div key={index} className="col-md-6">
+                      <div className="input-group input-group-sm">
+                        <span className="input-group-text bg-white text-muted fw-bold">#{index + 1}</span>
+                        <input 
+                          type="text" 
+                          className="form-control border-start-0" 
+                          placeholder="Enter OEM Serial..."
+                          required
+                          value={serial}
+                          onChange={(e) => handleSerialChange(index, e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="row mb-4">
               <div className="col-md-6">
@@ -111,6 +179,7 @@ export default function EditTool() {
                   <option value="IN_USE">IN USE</option>
                   <option value="SHARPENING">SHARPENING</option>
                   <option value="DAMAGED">DAMAGED</option>
+                  <option value="UNAVAILABLE">UNAVAILABLE</option>
                 </select>
               </div>
             </div>

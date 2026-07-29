@@ -11,6 +11,16 @@ public class ToolMovement {
     private String remarks;
     // Add this near your other variables at the top
     private java.util.List<String> serials;
+    // Add these variables near the top
+    private String machineName;
+    private String projectName;
+
+    // Add these getters and setters at the bottom
+    public String getMachineName() { return machineName; }
+    public void setMachineName(String machineName) { this.machineName = machineName; }
+
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
 
     // Add these Getter and Setter methods at the bottom of the file
     public java.util.List<String> getSerials() {

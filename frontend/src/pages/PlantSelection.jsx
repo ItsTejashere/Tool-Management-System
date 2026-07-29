@@ -38,8 +38,9 @@ export default function PlantSelection() {
       <div className="w-100" style={{ maxWidth: '900px' }}>
         <div className="d-flex justify-content-between align-items-center mb-5">
           <div>
-            <h2 className="fw-bold text-primary mb-1">Step 1: Select Facility</h2>
-            <p className="text-muted fs-5 mb-0">Choose a plant location</p>
+  
+            <h2 className="fw-bold text-primary mb-1">Select Facility</h2>
+
           </div>
           <button className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" onClick={handleLogout}>
             Logout

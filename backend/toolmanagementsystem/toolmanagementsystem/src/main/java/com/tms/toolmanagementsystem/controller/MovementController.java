@@ -30,4 +30,19 @@ public class MovementController {
     public ResponseEntity<java.util.List<ToolMovement>> getToolHistory(@PathVariable Integer id) {
         return ResponseEntity.ok(movementRepository.getMovementsByToolId(id));
     }
+    // 🚀 NEW: Endpoint to delete one record
+    @DeleteMapping("/{movementId}")
+    public org.springframework.http.ResponseEntity<?> deleteMovement(@PathVariable Integer movementId) {
+        boolean deleted = movementRepository.deleteMovement(movementId);
+        if (deleted) return org.springframework.http.ResponseEntity.ok(java.util.Map.of("status", true));
+        return org.springframework.http.ResponseEntity.status(500).body(java.util.Map.of("status", false));
+    }
+
+    // 🚀 NEW: Endpoint to wipe all history for a tool
+    @DeleteMapping("/tool/{toolId}/clear")
+    public org.springframework.http.ResponseEntity<?> clearToolHistory(@PathVariable Integer toolId) {
+        boolean cleared = movementRepository.clearToolHistory(toolId);
+        if (cleared) return org.springframework.http.ResponseEntity.ok(java.util.Map.of("status", true));
+        return org.springframework.http.ResponseEntity.status(500).body(java.util.Map.of("status", false));
+    }
 }

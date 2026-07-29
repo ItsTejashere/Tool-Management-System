@@ -5,14 +5,12 @@ import axios from 'axios';
 export default function ToolDetails() {
   const { id } = useParams(); 
   const navigate = useNavigate();
+  
   const userRole = localStorage.getItem('userRole');
-
-  // Security Check
-  useEffect(() => {
-    if (userRole !== 'INVENTORY') {
-      navigate('/dashboard');
-    }
-  }, [userRole, navigate]);
+  const activeDeptId = localStorage.getItem('activeDeptId');
+  
+  // 🚀 ROLE CHECK
+  const isInventory = userRole === 'INVENTORY';
 
   const [movement, setMovement] = useState({
     toolId: id,
@@ -23,60 +21,119 @@ export default function ToolDetails() {
     remarks: ''
   });
 
-  // --- SERIALIZED STATE ---
   const [availableSerials, setAvailableSerials] = useState([]);
   const [selectedSerials, setSelectedSerials] = useState([]); 
-  const [stockInSerials, setStockInSerials] = useState(['']); // For new stock entry
-
+  const [stockInSerials, setStockInSerials] = useState(['']); 
+  
+  // 🚀 Search State
+  const [serialSearch, setSerialSearch] = useState('');
+  
   const [history, setHistory] = useState([]);
   const [message, setMessage] = useState(null);
   const [machines, setMachines] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [projects, setProjects] = useState([]);
+  
+  // Force history open by default if they are a VIEWER
+  const [showHistory, setShowHistory] = useState(!isInventory);
+  
+  // 🚀 History Search & Bulk Delete States
+  const [historySearch, setHistorySearch] = useState('');
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
 
-  // Fetch Master Data
- // Fetch Master Data (Machines, Projects, History)
+  // 🚀 Delete a single row
+  const handleDeleteHistoryRow = async (movementId) => {
+    if (window.confirm("Are you sure you want to delete this log record?")) {
+      try {
+        await axios.delete(`http://localhost:8080/api/movements/${movementId}`);
+        setHistory(history.filter(h => h.movementId !== movementId)); 
+        setSelectedHistoryIds(selectedHistoryIds.filter(id => id !== movementId));
+      } catch (error) {
+        alert("Failed to delete record.");
+      }
+    }
+  };
+
+  // 🚀 Wipe the whole ledger
+  const handleClearAllHistory = async () => {
+    if (window.confirm("🚨 WARNING: Are you sure you want to wipe ALL history for this tool? This will permanently delete the logs to save space!")) {
+      try {
+        await axios.delete(`http://localhost:8080/api/movements/tool/${id}/clear`);
+        setHistory([]); 
+        setSelectedHistoryIds([]);
+      } catch (error) {
+        alert("Failed to clear history.");
+      }
+    }
+  };
+
+  // 🚀 Handle individual checkbox clicks
+  const handleSelectOne = (movementId) => {
+    if (selectedHistoryIds.includes(movementId)) {
+      setSelectedHistoryIds(selectedHistoryIds.filter(selectedId => selectedId !== movementId));
+    } else {
+      setSelectedHistoryIds([...selectedHistoryIds, movementId]);
+    }
+  };
+
+  // 🚀 Handle the "Select All" checkbox in the header
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedHistoryIds(displayHistory.map(r => r.movementId));
+    } else {
+      setSelectedHistoryIds([]);
+    }
+  };
+
+  // 🚀 Bulk Delete Function using Promise.all()
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedHistoryIds.length} selected records?`)) {
+      try {
+        await Promise.all(selectedHistoryIds.map(movementId => 
+          axios.delete(`http://localhost:8080/api/movements/${movementId}`)
+        ));
+        setHistory(history.filter(h => !selectedHistoryIds.includes(h.movementId)));
+        setSelectedHistoryIds([]); 
+      } catch (error) {
+        alert("Error deleting some records. Please refresh and check the ledger.");
+      }
+    }
+  };
+
+  // 🚀 Filter the history array based on the search bar
+  const displayHistory = history.filter(record => 
+    historySearch === '' || 
+    (record.involvedSerials && record.involvedSerials.toLowerCase().includes(historySearch.toLowerCase())) ||
+    (record.movementType && record.movementType.toLowerCase().includes(historySearch.toLowerCase()))
+  );
+
+  // Fetch Master Data 
   useEffect(() => {
-    // Grab the active department from memory so we only load relevant projects
-    const activeDeptId = localStorage.getItem('activeDeptId');
-
     const fetchMasterData = async () => {
-      
-      // 1. Fetch Machines Independently
       try {
         const machineRes = await axios.get('http://localhost:8080/api/machines');
         setMachines(machineRes.data);
-      } catch (error) {
-        console.error("Failed to load machines", error);
-      }
+      } catch (error) { console.error("Failed to load machines"); }
 
-      // 2. Fetch Projects Independently (Using the smart department endpoint!)
       try {
         const projectUrl = activeDeptId 
             ? `http://localhost:8080/api/projects/${activeDeptId}` 
             : 'http://localhost:8080/api/projects';
-            
         const projectRes = await axios.get(projectUrl);
         setProjects(projectRes.data);
-      } catch (error) {
-        console.error("Failed to load projects", error);
-      }
+      } catch (error) { console.error("Failed to load projects"); }
 
-      // 3. Fetch Movement History Independently
       try {
         const historyRes = await axios.get(`http://localhost:8080/api/movements/tool/${id}`);
         setHistory(historyRes.data);
-      } catch (error) {
-        console.error("Failed to load movement history", error);
-      }
-      
+      } catch (error) { console.error("Failed to load history"); }
     };
-
     fetchMasterData();
-  }, [id]);
+  }, [id, activeDeptId]);
 
-  // FETCH DYNAMIC SERIAL NUMBERS
+  // Fetch Dynamic Serial Numbers for the form
   useEffect(() => {
+    if (!isInventory) return;
+
     let targetStatus = '';
     if (movement.movementType === 'ISSUE') targetStatus = 'AVAILABLE';
     else if (movement.movementType === 'RETURN') targetStatus = 'IN_USE';
@@ -95,13 +152,11 @@ export default function ToolDetails() {
       setAvailableSerials([]);
       setSelectedSerials([]);
     }
-  }, [movement.movementType, id]);
+  }, [movement.movementType, id, isInventory]);
 
-  // 🚀 THE FIX: Handles dynamically adding blank input boxes for NEW stock
   const handleStockInQuantityChange = (e) => {
     let newQty = parseInt(e.target.value);
     if (isNaN(newQty) || newQty < 1) newQty = 1;
-
     const newSerials = [...stockInSerials];
     while (newSerials.length < newQty) newSerials.push('');
     if (newSerials.length > newQty) newSerials.length = newQty;
@@ -111,7 +166,6 @@ export default function ToolDetails() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 🚀 THE FIX: Decide which array of serials to validate and send
     const activeSerials = movement.movementType === 'STOCK_IN' ? stockInSerials : selectedSerials;
 
     if (activeSerials.length === 0 || activeSerials.some(s => s.trim() === '')) {
@@ -125,14 +179,22 @@ export default function ToolDetails() {
         machineId: movement.machineId ? parseInt(movement.machineId) : null,
         projectId: movement.projectId ? parseInt(movement.projectId) : null,
         quantity: activeSerials.length,
-        serials: activeSerials // 🚀 Send the exact list to Java
+        serials: activeSerials 
       };
 
       const response = await axios.post('http://localhost:8080/api/movements', payload);
       
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });
-        setTimeout(() => navigate('/dashboard'), 1000);
+        
+        // Clear forms and selections
+        setSelectedSerials([]);
+        setStockInSerials(['']);
+        setSerialSearch(''); 
+        setMovement({ ...movement, remarks: '', machineId: '', projectId: '' });
+        
+        setTimeout(() => setMessage(null), 3000);
+        setTimeout(() => window.location.reload(), 1500); 
       }
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to record movement.' });
@@ -141,187 +203,276 @@ export default function ToolDetails() {
 
   return (
     <div className="container mt-5 mb-5">
-      <button className="btn btn-outline-secondary mb-4" onClick={() => navigate('/dashboard')}>
+      <button className="btn btn-outline-secondary mb-4 shadow-sm" onClick={() => navigate('/dashboard')}>
         ← Back to Dashboard
       </button>
 
-      <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
-        <div className="card-header bg-white py-3">
-          <h4 className="mb-0 fw-bold text-primary">Record Inventory Movement</h4>
-          <span className="text-muted small">Tool ID: {id}</span>
-        </div>
-        
-        <div className="card-body p-4">
-          {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
+      {/* --- MANAGER ONLY: TRANSACTION FORM --- */}
+      {isInventory && (
+        <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
+          <div className="card-header bg-white py-3">
+            <h4 className="mb-0 fw-bold text-primary">Record Inventory Movement</h4>
+            <span className="text-muted small">Tool ID: {id}</span>
+          </div>
+          
+          <div className="card-body p-4">
+            {message && <div className={`alert alert-${message.type}`}>{message.text}</div>}
 
-          <form onSubmit={handleSubmit}>
-            
-            <div className="mb-4">
-              <label className="form-label fw-bold text-dark">Transaction Type</label>
-              <select 
-                className="form-select form-select-lg bg-light border-0 fw-semibold text-primary" 
-                value={movement.movementType}
-                onChange={(e) => setMovement({...movement, movementType: e.target.value})}
-              >
-                <option value="ISSUE">Issue Tool (Decrease Stock)</option>
-                <option value="RETURN">Return Tool (Increase Stock)</option>
-                <option value="STOCK_IN">New Stock In (Increase Stock)</option>
-                <option value="SHARPEN_OUT">Send to Sharpening (Decrease Stock)</option>
-                <option value="SHARPEN_IN">Receive from Sharpening (Increase Stock)</option>
-                <option value="SCRAP">Scrap / Dispose (Decrease Stock)</option>
-              </select>
-            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label className="form-label fw-bold text-dark">Transaction Type</label>
+                <select 
+                  className="form-select form-select-lg bg-light border-0 fw-semibold text-primary" 
+                  value={movement.movementType}
+                  onChange={(e) => setMovement({...movement, movementType: e.target.value})}
+                >
+                  <option value="ISSUE">Issue Tool (Decrease Stock)</option>
+                  <option value="RETURN">Return Tool (Increase Stock)</option>
+                  <option value="STOCK_IN">New Stock In (Increase Stock)</option>
+                  <option value="SHARPEN_OUT">Send to Sharpening (Decrease Stock)</option>
+                  <option value="SHARPEN_IN">Receive from Sharpening (Increase Stock)</option>
+                  <option value="SCRAP">Scrap / Dispose (Decrease Stock)</option>
+                </select>
+              </div>
 
-            {/* --- DYNAMIC UI SWITCH --- */}
-            {movement.movementType === 'STOCK_IN' ? (
-              <div className="mb-4 p-3 border rounded bg-light">
-                <div className="mb-3">
-                  <label className="form-label fw-semibold text-primary">Quantity of New Stock</label>
-                  <input type="number" className="form-control border-primary" required min="1"
-                    value={stockInSerials.length} 
-                    onChange={handleStockInQuantityChange} 
-                  />
+              {movement.movementType === 'STOCK_IN' ? (
+                <div className="mb-4 p-3 border rounded bg-light">
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold text-primary">Quantity of New Stock</label>
+                    <input type="number" className="form-control border-primary" required min="1"
+                      value={stockInSerials.length} 
+                      onChange={handleStockInQuantityChange} 
+                    />
+                  </div>
+                  <label className="form-label fw-bold mb-2">Scan or Type New Serial Numbers</label>
+                  <div className="row g-2">
+                    {stockInSerials.map((serial, index) => (
+                      <div key={index} className="col-md-6">
+                        <div className="input-group input-group-sm">
+                          <span className="input-group-text bg-white text-muted fw-bold">#{index + 1}</span>
+                          <input 
+                            type="text" 
+                            className="form-control border-start-0" 
+                            placeholder="Enter OEM Serial..."
+                            required
+                            value={serial}
+                            onChange={(e) => {
+                              const updated = [...stockInSerials];
+                              updated[index] = e.target.value;
+                              setStockInSerials(updated);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <label className="form-label fw-bold mb-2">Scan or Type New Serial Numbers</label>
-                <div className="row g-2">
-                  {stockInSerials.map((serial, index) => (
-                    <div key={index} className="col-md-6">
-                      <div className="input-group input-group-sm">
-                        <span className="input-group-text bg-white text-muted fw-bold">#{index + 1}</span>
-                        <input 
-                          type="text" 
-                          className="form-control border-start-0" 
-                          placeholder="Enter OEM Serial..."
-                          required
-                          value={serial}
-                          onChange={(e) => {
-                            const updated = [...stockInSerials];
-                            updated[index] = e.target.value;
-                            setStockInSerials(updated);
-                          }}
-                        />
+              ) : (
+                <div className="mb-4">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <label className="form-label fw-bold mb-0">Select Specific Tools</label>
+                    {availableSerials.length > 0 && (
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-link text-decoration-none py-0"
+                        onClick={() => {
+                          if (selectedSerials.length === availableSerials.length) {
+                            setSelectedSerials([]); 
+                          } else {
+                            setSelectedSerials(availableSerials.map(s => s.serialNumber)); 
+                          }
+                        }}
+                      >
+                        {selectedSerials.length === availableSerials.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    )}
+                  </div>
+
+                  {availableSerials.length === 0 ? (
+                    <div className="alert alert-warning py-2 small mb-0 fw-semibold">
+                      No tools currently available for this action.
+                    </div>
+                  ) : (
+                    <div className="border rounded p-2 bg-white shadow-sm">
+                      <input 
+                        type="text" 
+                        className="form-control form-control-sm mb-3 bg-light border-0" 
+                        placeholder="🔍 Search serial numbers..."
+                        value={serialSearch}
+                        onChange={(e) => setSerialSearch(e.target.value)}
+                      />
+                      
+                      <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                        {availableSerials
+                          .filter(instance => instance.serialNumber.toLowerCase().includes(serialSearch.toLowerCase()))
+                          .map(instance => (
+                          <div key={instance.instanceId} className="form-check mb-2">
+                            <input 
+                              className="form-check-input" 
+                              type="checkbox" 
+                              value={instance.serialNumber}
+                              id={`serial-${instance.instanceId}`}
+                              checked={selectedSerials.includes(instance.serialNumber)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSerials([...selectedSerials, instance.serialNumber]);
+                                } else {
+                                  setSelectedSerials(selectedSerials.filter(s => s !== instance.serialNumber));
+                                }
+                              }}
+                            />
+                            <label className="form-check-label fw-semibold text-primary" htmlFor={`serial-${instance.instanceId}`} style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>
+                              {instance.serialNumber}
+                            </label>
+                          </div>
+                        ))}
+                        
+                        {availableSerials.filter(instance => instance.serialNumber.toLowerCase().includes(serialSearch.toLowerCase())).length === 0 && (
+                          <div className="text-muted small text-center py-2">
+                            No serial numbers match "{serialSearch}"
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  )}
+                  <div className="form-text mt-2">
+                    Total Selected: <span className="fw-bold text-dark fs-6">{selectedSerials.length}</span>
+                  </div>
                 </div>
-              </div>
-            ) : (
+              )}
+
+              {movement.movementType === 'ISSUE' && (
+                <div className="row mb-3">
+                  <div className="col">
+                    <label className="form-label fw-semibold">Machine (Optional)</label>
+                    <select 
+                      className="form-select bg-light"
+                      value={movement.machineId}
+                      onChange={(e) => setMovement({...movement, machineId: e.target.value})}
+                    >
+                      <option value="">-- Select Machine --</option>
+                      {machines.map(m => (
+                        <option key={m.machineId} value={m.machineId}>{m.machineName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="col">
+                    <label className="form-label fw-semibold">Project (Optional)</label>
+                    <select 
+                      className="form-select bg-light"
+                      value={movement.projectId}
+                      onChange={(e) => setMovement({...movement, projectId: e.target.value})}
+                    >
+                      <option value="">-- Select Project --</option>
+                      {projects.map(p => (
+                        <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div className="mb-4">
-                <label className="form-label fw-bold">Select Specific Tools</label>
-                {availableSerials.length === 0 ? (
-                  <div className="alert alert-warning py-2 small mb-0 fw-semibold">
-                    No tools currently available for this action.
-                  </div>
-                ) : (
-                  <div className="border rounded p-2 bg-white shadow-sm" style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                    {availableSerials.map(instance => (
-                      <div key={instance.instanceId} className="form-check mb-2">
-                        <input 
-                          className="form-check-input" 
-                          type="checkbox" 
-                          value={instance.serialNumber}
-                          id={`serial-${instance.instanceId}`}
-                          checked={selectedSerials.includes(instance.serialNumber)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedSerials([...selectedSerials, instance.serialNumber]);
-                            } else {
-                              setSelectedSerials(selectedSerials.filter(s => s !== instance.serialNumber));
-                            }
-                          }}
-                        />
-                        <label className="form-check-label fw-semibold text-primary" htmlFor={`serial-${instance.instanceId}`} style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>
-                          {instance.serialNumber}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="form-text mt-2">
-                  Total Selected: <span className="fw-bold text-dark fs-6">{selectedSerials.length}</span>
-                </div>
+                <label className="form-label fw-semibold">Remarks / Notes</label>
+                <input type="text" className="form-control bg-light" placeholder="e.g., Broken edge, given to John"
+                  value={movement.remarks} 
+                  onChange={(e) => setMovement({...movement, remarks: e.target.value})} 
+                />
               </div>
-            )}
 
-            {movement.movementType === 'ISSUE' && (
-              <div className="row mb-3">
-                <div className="col">
-                  <label className="form-label fw-semibold">Machine (Optional)</label>
-                  <select 
-                    className="form-select bg-light"
-                    value={movement.machineId}
-                    onChange={(e) => setMovement({...movement, machineId: e.target.value})}
-                  >
-                    <option value="">-- Select Machine --</option>
-                    {machines.map(m => (
-                      <option key={m.machineId} value={m.machineId}>{m.machineName}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="col">
-                  <label className="form-label fw-semibold">Project (Optional)</label>
-                  <select 
-                    className="form-select bg-light"
-                    value={movement.projectId}
-                    onChange={(e) => setMovement({...movement, projectId: e.target.value})}
-                  >
-                    <option value="">-- Select Project --</option>
-                    {projects.map(p => (
-                      <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            <div className="mb-4">
-              <label className="form-label fw-semibold">Remarks / Notes</label>
-              <input type="text" className="form-control bg-light" placeholder="e.g., Broken edge, given to John"
-                value={movement.remarks} 
-                onChange={(e) => setMovement({...movement, remarks: e.target.value})} 
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm">
-              Confirm Transaction
-            </button>
-          </form>
-        </div>
-      </div>
-      
-      {/* Ledger UI Below remains the same */}
-      <div className="text-center mt-5 mb-4">
-        <button className="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm" onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? 'Hide Movement History ↑' : 'View Movement History ↓'}
-        </button>
-      </div>
-
-      {showHistory && (
-        <div className="card shadow-sm border-0 mx-auto mb-5" style={{ maxWidth: '800px' }}>
-          <div className="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0 fw-bold">Movement History Ledger</h5>
-            <span className="badge bg-secondary">{history.length} Records</span>
+              <button type="submit" className="btn btn-primary w-100 fw-bold py-2 rounded-pill shadow-sm">
+                Confirm Transaction
+              </button>
+            </form>
           </div>
+        </div>
+      )}
+      
+      {/* --- TOGGLE BUTTON (Managers Only) --- */}
+      {isInventory && (
+        <div className="text-center mt-5 mb-4">
+          <button className="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm" onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? 'Hide Movement History ↑' : 'View Movement History ↓'}
+          </button>
+        </div>
+      )}
+
+      {/* --- MOVEMENT HISTORY LEDGER --- */}
+      {showHistory && (
+        <div className="card shadow-sm border-0 mx-auto mb-5" style={{ maxWidth: '900px' }}>
+          
+          <div className="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-3">
+              <h5 className="mb-0 fw-bold">Movement History Ledger</h5>
+              <span className="badge bg-secondary">{displayHistory.length} Records</span>
+            </div>
+            
+            <div className="d-flex gap-2">
+              <input 
+                type="text" 
+                className="form-control form-control-sm border-0" 
+                placeholder="🔍 Search serials or type..." 
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                style={{ width: '200px' }}
+              />
+              
+              {isInventory && selectedHistoryIds.length > 0 && (
+                <button className="btn btn-warning btn-sm fw-bold shadow-sm" onClick={handleBulkDelete}>
+                  Delete Selected ({selectedHistoryIds.length})
+                </button>
+              )}
+              {isInventory && history.length > 0 && (
+                <button className="btn btn-danger btn-sm fw-bold shadow-sm" onClick={handleClearAllHistory}>
+                  Clear All
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="table-responsive">
-            <table className="table table-hover mb-0">
+            <table className="table table-hover mb-0 align-middle">
               <thead className="table-light">
                 <tr>
+                  {isInventory && (
+                    <th style={{ width: '40px', paddingLeft: '1rem' }}>
+                      <input 
+                        type="checkbox" 
+                        className="form-check-input border-secondary"
+                        checked={displayHistory.length > 0 && selectedHistoryIds.length === displayHistory.length}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                  )}
                   <th>Date</th>
                   <th>Type</th>
                   <th>Qty</th>
-                  <th>Serials</th> {/* 🚀 Added Header */}
+                  <th>Serials</th> 
                   <th>Machine</th>
                   <th>Project</th>
                   <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
-                {history.length === 0 ? (
-                  <tr><td colSpan="7" className="text-center py-4 text-muted">No movements recorded yet.</td></tr>
+                {displayHistory.length === 0 ? (
+                  <tr><td colSpan={isInventory ? "8" : "7"} className="text-center py-4 text-muted">No movements found.</td></tr>
                 ) : (
-                  history.map((record) => (
-                    <tr key={record.movementId}>
+                  displayHistory.map((record) => (
+                    <tr key={record.movementId} className={selectedHistoryIds.includes(record.movementId) ? "table-active" : ""}>
+                      
+                      {isInventory && (
+                        <td style={{ paddingLeft: '1rem' }}>
+                          <input 
+                            type="checkbox" 
+                            className="form-check-input border-secondary"
+                            style={{ cursor: 'pointer' }}
+                            checked={selectedHistoryIds.includes(record.movementId)}
+                            onChange={() => handleSelectOne(record.movementId)}
+                          />
+                        </td>
+                      )}
+                      
                       <td className="text-muted small">{new Date(record.movementDate).toLocaleString()}</td>
                       <td>
                         <span className={`badge ${record.movementType === 'ISSUE' || record.movementType === 'SCRAP' || record.movementType === 'SHARPEN_OUT' ? 'bg-danger' : 'bg-success'}`}>
@@ -329,14 +480,11 @@ export default function ToolDetails() {
                         </span>
                       </td>
                       <td className="fw-bold">{record.quantity}</td>
-                      
-                      {/* 🚀 Show the serials with a monospace font so they look like codes */}
                       <td className="small font-monospace text-primary fw-semibold" style={{ maxWidth: '150px' }}>
                         {record.involvedSerials || '-'}
                       </td>
-                      
-                      <td>{record.machineId ? `ID: ${record.machineId}` : '-'}</td>
-                      <td>{record.projectId ? `ID: ${record.projectId}` : '-'}</td>
+                      <td className="fw-semibold text-dark small">{record.machineName || '-'}</td>
+                      <td className="fw-semibold text-dark small">{record.projectName || '-'}</td>
                       <td className="small text-secondary">{record.remarks || '-'}</td>
                     </tr>
                   ))
@@ -346,6 +494,7 @@ export default function ToolDetails() {
           </div>
         </div>
       )}
+      
     </div>
   );
 }

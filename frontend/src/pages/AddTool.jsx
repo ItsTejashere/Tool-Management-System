@@ -16,33 +16,29 @@ export default function AddTool() {
   const [formData, setFormData] = useState({
     toolCode: '',
     toolName: '',
+    drawingNumber: '', // 🚀 NEW: Added to state
     minimumQuantity: '',
     storageLocation: ''
   });
 
-  // 🚀 NEW: State to manage the dynamic list of serial numbers
-  const [serials, setSerials] = useState(['']); // Starts with 1 empty input
-
+ const [serials, setSerials] = useState([]);
   const [message, setMessage] = useState(null);
 
-  // Handle changing the "Total Stock" number
   const handleQuantityChange = (e) => {
     let newQty = parseInt(e.target.value);
-    if (isNaN(newQty) || newQty < 1) newQty = 1;
+    // 🚀 Change the fallback to 0 instead of 1
+    if (isNaN(newQty) || newQty < 0) newQty = 0; 
 
     const newSerials = [...serials];
-    // Add new blank inputs if quantity increased
     while (newSerials.length < newQty) {
       newSerials.push('');
     }
-    // Remove inputs if quantity decreased
     if (newSerials.length > newQty) {
       newSerials.length = newQty;
     }
     setSerials(newSerials);
   };
 
-  // Handle typing into a specific serial number box
   const handleSerialChange = (index, value) => {
     const updatedSerials = [...serials];
     updatedSerials[index] = value;
@@ -52,13 +48,11 @@ export default function AddTool() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation: Make sure no serial numbers are blank
     if (serials.some(s => s.trim() === '')) {
       alert("Please fill out all serial number fields, or reduce the Total Stock.");
       return;
     }
 
-    // Validation: Check for duplicate serials in the form
     const uniqueSerials = new Set(serials);
     if (uniqueSerials.size !== serials.length) {
       alert("You cannot enter duplicate serial numbers for the same tool.");
@@ -69,7 +63,7 @@ export default function AddTool() {
       const payload = {
         ...formData,
         projectId: activeProjectId ? parseInt(activeProjectId) : null,
-        serials: serials // Send the array of strings to Java!
+        serials: serials 
       };
 
       const response = await axios.post('http://localhost:8080/api/tools', payload);
@@ -87,7 +81,7 @@ export default function AddTool() {
       <button className="btn btn-outline-secondary mb-4" onClick={() => navigate('/dashboard')}>
         ← Back to Dashboard
       </button>
-
+      
       <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
         <div className="card-header bg-white py-3">
           <h4 className="mb-0 fw-bold text-primary">Add New Tool</h4>
@@ -112,6 +106,14 @@ export default function AddTool() {
                 value={formData.toolName} 
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
+            
+            {/* 🚀 NEW: Drawing Number Input */}
+            <div className="mb-4">
+              <label className="form-label fw-semibold">Drawing Number (Optional)</label>
+              <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
+                value={formData.drawingNumber} 
+                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            </div>
 
             <div className="row mb-3">
               <div className="col">
@@ -122,7 +124,7 @@ export default function AddTool() {
               </div>
               <div className="col">
                 <label className="form-label fw-semibold text-primary">Initial Total Stock</label>
-                <input type="number" className="form-control border-primary" required min="1"
+                <input type="number" className="form-control border-primary" required min="0"
                   value={serials.length} 
                   onChange={handleQuantityChange} />
               </div>
@@ -135,7 +137,6 @@ export default function AddTool() {
                 onChange={(e) => setFormData({...formData, storageLocation: e.target.value})} />
             </div>
 
-            {/* 🚀 DYNAMIC SERIAL NUMBER INPUTS */}
             <div className="mb-4 p-3 border rounded bg-light">
               <label className="form-label fw-bold mb-3">Scan or Type Serial Numbers</label>
               <div className="row g-2">

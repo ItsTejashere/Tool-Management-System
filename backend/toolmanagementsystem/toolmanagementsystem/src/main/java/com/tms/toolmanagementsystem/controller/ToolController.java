@@ -35,12 +35,12 @@ public class ToolController {
     }
 
     // Add this inside ToolController.java
-    @DeleteMapping("/tools/{toolId}")
+    // 🚀 FIXED: Removed the extra "/tools" from the path
+    @DeleteMapping("/{toolId}")
     public ResponseEntity<?> deleteTool(@PathVariable Integer toolId) {
         boolean isDeleted = toolRepository.deleteTool(toolId);
 
         if (isDeleted) {
-            // Send back a JSON success response that React can read
             return ResponseEntity.ok().body("{\"status\": true, \"message\": \"Tool and all associated data deleted successfully\"}");
         } else {
             return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Failed to delete tool\"}");
