@@ -12,6 +12,18 @@ public class Tool {
     private String status;
     private Integer projectId;
     private List<String> serials;
+    // 🚀 NEW: Link this tool to a specific plant for Multi-Tenancy!
+    private Integer plantId;
+
+    // ... your other getters and setters ...
+
+    public Integer getPlantId() {
+        return plantId;
+    }
+
+    public void setPlantId(Integer plantId) {
+        this.plantId = plantId;
+    }
 
     // 🚀 THE MISSING BUCKETS
     private Integer availableQuantity;

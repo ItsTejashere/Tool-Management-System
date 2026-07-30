@@ -10,8 +10,9 @@ export default function ProjectSelection() {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
   
-  // New state for the Add Project input
+  // New states for the Add Project and Search inputs
   const [newProjectName, setNewProjectName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
@@ -46,7 +47,6 @@ export default function ProjectSelection() {
     navigate('/dashboard'); 
   };
 
-  // --- NEW: Add Project Function ---
   const handleAddProject = async (e) => {
     e.preventDefault();
     if (!newProjectName.trim()) return;
@@ -70,7 +70,6 @@ export default function ProjectSelection() {
     }
   };
 
-  // --- NEW: Delete Project Function ---
   const handleDeleteProject = async (e, projectId, projectName) => {
     e.stopPropagation(); // Stops the card click event so it doesn't navigate to the dashboard
     
@@ -86,6 +85,11 @@ export default function ProjectSelection() {
       }
     }
   };
+
+  // 🚀 Filter logic: Automatically filters the project list based on the search term
+  const filteredProjects = projects.filter(project => 
+    project.projectName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="container-fluid bg-light min-vh-100 py-5 d-flex flex-column align-items-center">
@@ -104,37 +108,66 @@ export default function ProjectSelection() {
           <div className="alert alert-danger fw-bold">{error}</div>
         )}
 
-        {/* --- INVENTORY MANAGER CONTROLS: Add Project --- */}
-        {userRole === 'INVENTORY' && (
-          <div className="card border-0 shadow-sm rounded-4 p-3 mb-5 bg-white">
-            <form onSubmit={handleAddProject} className="d-flex gap-2 align-items-center">
-              <input 
-                type="text" 
-                className="form-control form-control-lg bg-light border-0" 
-                placeholder="Enter new project name..."
-                required
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                disabled={isAdding}
-              />
-              <button 
-                type="submit" 
-                className="btn btn-success btn-lg px-4 fw-bold rounded-3 shadow-sm"
-                disabled={isAdding}
-              >
-                {isAdding ? 'Adding...' : '+ Add Project'}
-              </button>
-            </form>
+        {/* --- 🚀 NEW COMBINED CONTROLS ROW: Search Bar & Add Project --- */}
+        <div className="row mb-4">
+          
+          {/* 🔍 Search Bar UI */}
+          <div className="col-md-6 mb-3 mb-md-0">
+            <div className="card border-0 shadow-sm rounded-4 p-2 bg-white h-100 d-flex align-items-center justify-content-center">
+              <div className="input-group w-100">
+                <span className="input-group-text bg-transparent border-0 pe-1">
+                  <i className="bi bi-search text-muted fs-5"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control form-control-lg bg-light border-0 shadow-none rounded-3 ms-2"
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* ➕ Add Project UI (Only visible to INVENTORY role) */}
+          {userRole === 'INVENTORY' && (
+            <div className="col-md-6">
+              <div className="card border-0 shadow-sm rounded-4 p-2 bg-white">
+                <form onSubmit={handleAddProject} className="d-flex gap-2 align-items-center mb-0">
+                  <input 
+                    type="text" 
+                    className="form-control form-control-lg bg-light border-0 shadow-none rounded-3" 
+                    placeholder="New project name..."
+                    required
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    disabled={isAdding}
+                  />
+                  <button 
+                    type="submit" 
+                    className="btn btn-success btn-lg px-3 fw-bold rounded-3 shadow-sm text-nowrap"
+                    disabled={isAdding}
+                  >
+                    {isAdding ? 'Adding...' : '+ Add Project'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="row row-cols-1 row-cols-md-2 g-4">
           {!error && projects.length === 0 ? (
             <div className="col-12 text-center py-5">
               <p className="text-muted fs-5">No projects found for this department.</p>
             </div>
+          ) : !error && filteredProjects.length === 0 ? (
+            <div className="col-12 text-center py-5">
+              <p className="text-muted fs-5">No projects match your search.</p>
+            </div>
           ) : (
-            projects.map((p) => (
+            // 🚀 Now mapping over filteredProjects instead of the full projects array!
+            filteredProjects.map((p) => (
               <div key={p.projectId} className="col">
                 <div 
                   className="card h-100 border-0 shadow-sm rounded-4 p-3 position-relative" 
@@ -159,7 +192,7 @@ export default function ProjectSelection() {
                         title="Delete Project"
                         onClick={(e) => handleDeleteProject(e, p.projectId, p.projectName)}
                       >
-                        Delete
+                        <i className="bi bi-trash"></i> Delete
                       </button>
                     )}
                   </div>

@@ -251,6 +251,7 @@ export default function ToolDetails() {
                         <div className="input-group input-group-sm">
                           <span className="input-group-text bg-white text-muted fw-bold">#{index + 1}</span>
                           <input 
+                            id={`stock-in-${index}`}
                             type="text" 
                             className="form-control border-start-0" 
                             placeholder="Enter OEM Serial..."
@@ -260,6 +261,15 @@ export default function ToolDetails() {
                               const updated = [...stockInSerials];
                               updated[index] = e.target.value;
                               setStockInSerials(updated);
+                            }}
+                            // 🚀 THE SCANNER MAGIC: Intercept the scanner's 'Enter' key
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault(); // Stop the form from submitting!
+                                // Move cursor to the next box automatically
+                                const nextInput = document.getElementById(`stock-in-${index + 1}`);
+                                if (nextInput) nextInput.focus();
+                              }
                             }}
                           />
                         </div>
@@ -300,6 +310,10 @@ export default function ToolDetails() {
                         placeholder="🔍 Search serial numbers..."
                         value={serialSearch}
                         onChange={(e) => setSerialSearch(e.target.value)}
+                        // 🚀 PREVENT SCANNER FROM SUBMITTING THE FORM
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.preventDefault(); 
+                        }}
                       />
                       
                       <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
