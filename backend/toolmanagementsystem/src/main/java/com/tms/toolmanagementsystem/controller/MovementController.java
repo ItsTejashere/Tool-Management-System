@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/movements")
-@CrossOrigin(origins = "${cors.allowed-origins:http://localhost:5173}")
+@CrossOrigin(origins = "${cors.allowed-origins}")
 public class MovementController {
 
     @Autowired

@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "${cors.allowed-origins:http://localhost:5173}")
+@CrossOrigin(origins = "${cors.allowed-origins}")
 public class MasterDataController {
 
     @Autowired
