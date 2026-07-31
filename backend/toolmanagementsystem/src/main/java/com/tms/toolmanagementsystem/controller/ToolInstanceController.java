@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "${cors.allowed-origins:http://localhost:5173}")
 public class ToolInstanceController {
 
     // Fetch serial numbers based on Tool ID and their current status
