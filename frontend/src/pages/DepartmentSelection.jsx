@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 export default function DepartmentSelection() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function DepartmentSelection() {
     const fetchDepartments = async () => {
       try {
         // 1. Update the URL to include the activePlantId
-        const response = await axios.get(`http://localhost:8080/api/departments/${activePlantId}`);
+        const response = await axios.get(`${API_URL}/api/departments/${activePlantId}`);
         
         if (Array.isArray(response.data)) {
           // 2. No need to filter in React anymore! Java already did the work.

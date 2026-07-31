@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 export default function ToolDetails() {
   const { id } = useParams(); 
@@ -44,7 +45,7 @@ export default function ToolDetails() {
   const handleDeleteHistoryRow = async (movementId) => {
     if (window.confirm("Are you sure you want to delete this log record?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/movements/${movementId}`);
+        await axios.delete(`${API_URL}/api/movements/${movementId}`);
         setHistory(history.filter(h => h.movementId !== movementId)); 
         setSelectedHistoryIds(selectedHistoryIds.filter(id => id !== movementId));
       } catch (error) {
@@ -57,7 +58,7 @@ export default function ToolDetails() {
   const handleClearAllHistory = async () => {
     if (window.confirm("🚨 WARNING: Are you sure you want to wipe ALL history for this tool? This will permanently delete the logs to save space!")) {
       try {
-        await axios.delete(`http://localhost:8080/api/movements/tool/${id}/clear`);
+        await axios.delete(`${API_URL}/api/movements/tool/${id}/clear`);
         setHistory([]); 
         setSelectedHistoryIds([]);
       } catch (error) {
@@ -89,7 +90,7 @@ export default function ToolDetails() {
     if (window.confirm(`Are you sure you want to delete ${selectedHistoryIds.length} selected records?`)) {
       try {
         await Promise.all(selectedHistoryIds.map(movementId => 
-          axios.delete(`http://localhost:8080/api/movements/${movementId}`)
+          axios.delete(`${API_URL}/api/movements/${movementId}`)
         ));
         setHistory(history.filter(h => !selectedHistoryIds.includes(h.movementId)));
         setSelectedHistoryIds([]); 
@@ -110,20 +111,20 @@ export default function ToolDetails() {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const machineRes = await axios.get('http://localhost:8080/api/machines');
+        const machineRes = await axios.get(`${API_URL}/api/machines`);
         setMachines(machineRes.data);
       } catch (error) { console.error("Failed to load machines"); }
 
       try {
         const projectUrl = activeDeptId 
-            ? `http://localhost:8080/api/projects/${activeDeptId}` 
-            : 'http://localhost:8080/api/projects';
+            ? `${API_URL}/api/projects/${activeDeptId}` 
+            : `${API_URL}/api/projects`;
         const projectRes = await axios.get(projectUrl);
         setProjects(projectRes.data);
       } catch (error) { console.error("Failed to load projects"); }
 
       try {
-        const historyRes = await axios.get(`http://localhost:8080/api/movements/tool/${id}`);
+        const historyRes = await axios.get(`${API_URL}/api/movements/tool/${id}`);
         setHistory(historyRes.data);
       } catch (error) { console.error("Failed to load history"); }
     };
@@ -142,7 +143,7 @@ export default function ToolDetails() {
     else if (movement.movementType === 'SCRAP') targetStatus = 'AVAILABLE'; 
 
     if (targetStatus && id && movement.movementType !== 'STOCK_IN') {
-      axios.get(`http://localhost:8080/api/tool-instances/${id}/status/${targetStatus}`)
+      axios.get(`${API_URL}/api/tool-instances/${id}/status/${targetStatus}`)
         .then(res => {
           setAvailableSerials(res.data);
           setSelectedSerials([]); 
@@ -182,7 +183,7 @@ export default function ToolDetails() {
         serials: activeSerials 
       };
 
-      const response = await axios.post('http://localhost:8080/api/movements', payload);
+      const response = await axios.post(`${API_URL}/api/movements`, payload);
       
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });

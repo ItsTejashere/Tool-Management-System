@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 
 export default function Department() {
 
@@ -17,7 +17,7 @@ export default function Department() {
   const fetchDepartments = async () => {
     try {
       // Send the specific plantId to your Java API
-      const response = await axios.get(`http://localhost:8080/api/departments/${plantId}`);
+      const response = await axios.get(`${API_URL}/api/departments/${plantId}`);
       setDepartments(response.data);
     } catch (error) {
       console.error("Error fetching departments", error);

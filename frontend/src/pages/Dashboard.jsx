@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function Dashboard() {
     
     const fetchTools = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/tools');
+        const response = await axios.get(`${API_URL}/api/tools`);
         console.log("DATA FROM JAVA:", response.data); // 🚀 ADD THIS LINE
         setTools(response.data);
       } catch (error) {
@@ -53,7 +54,7 @@ export default function Dashboard() {
   const handleDelete = async (toolId) => {
     if (window.confirm("Are you sure you want to delete this tool? This will also erase its serial numbers and movement history!")) {
       try {
-        const response = await axios.delete(`http://localhost:8080/api/tools/${toolId}`);
+        const response = await axios.delete(`${API_URL}/api/tools/${toolId}`);
         if (response.data.status === true) {
           setTools(tools.filter(tool => tool.toolId !== toolId));
         }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 export default function AddTool() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function AddTool() {
         serials: serials 
       };
 
-      const response = await axios.post('http://localhost:8080/api/tools', payload);
+      const response = await axios.post(`${API_URL}/api/tools`, payload);
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });
         setTimeout(() => navigate('/dashboard'), 1000);

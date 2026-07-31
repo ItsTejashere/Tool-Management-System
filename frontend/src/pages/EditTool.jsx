@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config';
 
 export default function EditTool() {
   const { id } = useParams(); 
@@ -28,7 +29,7 @@ export default function EditTool() {
   useEffect(() => {
     const fetchToolDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/tools/${id}`);
+        const response = await axios.get(`${API_URL}/api/tools/${id}`);
         setFormData(response.data);
       } catch (error) {
         setMessage({ type: 'danger', text: 'Error loading tool details.' });
@@ -75,7 +76,7 @@ export default function EditTool() {
         serials: serials // Send the new serials to Java!
       };
 
-      const response = await axios.put(`http://localhost:8080/api/tools/${id}`, payload);
+      const response = await axios.put(`${API_URL}/api/tools/${id}`, payload);
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });
         setTimeout(() => navigate('/dashboard'), 1000);

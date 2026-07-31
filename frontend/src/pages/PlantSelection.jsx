@@ -14,7 +14,7 @@ export default function PlantSelection() {
     }
     const fetchPlants = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/plants');
+        const response = await axios.get(`${API_URL}/api/plants`);
         setPlants(response.data);
       } catch (error) {
         console.error("Error fetching plants", error);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../config'; // ADD THIS LINE
 
 export default function ProjectSelection() {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ export default function ProjectSelection() {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
   
-  // New states for the Add Project and Search inputs
   const [newProjectName, setNewProjectName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -29,8 +29,8 @@ export default function ProjectSelection() {
 
   const fetchProjects = async () => {
     try {
-      // Using the exact URL pattern we set up earlier
-      const response = await axios.get(`http://localhost:8080/api/projects/${activeDeptId}`);
+      // FIXED: Use API_URL instead of hardcoded localhost
+      const response = await axios.get(`${API_URL}/api/projects/${activeDeptId}`);
       if (Array.isArray(response.data)) {
         setProjects(response.data);
       } else {
@@ -58,10 +58,11 @@ export default function ProjectSelection() {
         departmentId: parseInt(activeDeptId)
       };
       
-      const response = await axios.post('http://localhost:8080/api/projects', payload);
+      // FIXED: Changed single quotes to backticks (template literal) and import API_URL
+      const response = await axios.post(`${API_URL}/api/projects`, payload);
       if (response.data.status) {
-        setNewProjectName(''); // Clear input
-        fetchProjects(); // Refresh the list instantly
+        setNewProjectName('');
+        fetchProjects();
       }
     } catch (err) {
       alert("Failed to add project.");
@@ -71,13 +72,13 @@ export default function ProjectSelection() {
   };
 
   const handleDeleteProject = async (e, projectId, projectName) => {
-    e.stopPropagation(); // Stops the card click event so it doesn't navigate to the dashboard
+    e.stopPropagation();
     
     if (window.confirm(`Are you sure you want to delete the workspace for "${projectName}"? You cannot delete a project if tools are currently assigned to it.`)) {
       try {
-        const response = await axios.delete(`http://localhost:8080/api/projects/${projectId}`);
+        // FIXED: Use API_URL instead of hardcoded
+        const response = await axios.delete(`${API_URL}/api/projects/${projectId}`);
         if (response.data.status) {
-          // Remove from UI immediately without refreshing
           setProjects(projects.filter(p => p.projectId !== projectId));
         }
       } catch (err) {
@@ -86,7 +87,6 @@ export default function ProjectSelection() {
     }
   };
 
-  // 🚀 Filter logic: Automatically filters the project list based on the search term
   const filteredProjects = projects.filter(project => 
     project.projectName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -108,10 +108,8 @@ export default function ProjectSelection() {
           <div className="alert alert-danger fw-bold">{error}</div>
         )}
 
-        {/* --- 🚀 NEW COMBINED CONTROLS ROW: Search Bar & Add Project --- */}
         <div className="row mb-4">
           
-          {/* 🔍 Search Bar UI */}
           <div className="col-md-6 mb-3 mb-md-0">
             <div className="card border-0 shadow-sm rounded-4 p-2 bg-white h-100 d-flex align-items-center justify-content-center">
               <div className="input-group w-100">
@@ -129,7 +127,6 @@ export default function ProjectSelection() {
             </div>
           </div>
 
-          {/* ➕ Add Project UI (Only visible to INVENTORY role) */}
           {userRole === 'INVENTORY' && (
             <div className="col-md-6">
               <div className="card border-0 shadow-sm rounded-4 p-2 bg-white">
@@ -166,7 +163,6 @@ export default function ProjectSelection() {
               <p className="text-muted fs-5">No projects match your search.</p>
             </div>
           ) : (
-            // 🚀 Now mapping over filteredProjects instead of the full projects array!
             filteredProjects.map((p) => (
               <div key={p.projectId} className="col">
                 <div 
@@ -185,7 +181,6 @@ export default function ProjectSelection() {
                   <div className="card-body d-flex justify-content-between align-items-center">
                     <h4 className="fw-bold text-dark mb-0">{p.projectName}</h4>
                     
-                    {/* --- INVENTORY MANAGER CONTROLS: Delete Project --- */}
                     {userRole === 'INVENTORY' && (
                       <button 
                         className="btn btn-outline-danger btn-sm border-0 px-2"

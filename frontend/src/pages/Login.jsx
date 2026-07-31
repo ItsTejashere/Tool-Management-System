@@ -13,7 +13,7 @@ export default function Login() {
     e.preventDefault(); 
     try {
       // Note the new /auth/ URL
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         username: username,
         password: password
       });
