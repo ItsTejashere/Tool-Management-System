@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
+import logoImage from '../assets/etgp.jpg';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -40,13 +41,12 @@ export default function Login() {
       <div className="card shadow-lg p-5 border-0 rounded-4" style={{ width: '450px', backgroundColor: '#ffffff' }}>
         
         <div className="text-center mb-4">
-          <img 
-            src="./src/assets/etgp.jpg" 
-            alt="ETGP Logo" 
-            className="mb-3"
-            style={{ maxWidth: '150px' }} 
-            onError={(e) => e.target.src = "https://via.placeholder.com/150?text=Logo"}
-          />
+         <img 
+  src={logoImage} 
+  alt="ETGP Logo" 
+  className="mb-3" 
+  style={{ maxWidth: '150px' }} 
+/>
           <p className="text-muted">Welcome to Tool Management System.</p>
         </div>
         
