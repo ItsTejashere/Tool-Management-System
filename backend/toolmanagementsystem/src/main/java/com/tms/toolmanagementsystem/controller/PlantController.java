@@ -15,7 +15,7 @@ public class PlantController {
 
     @Autowired
     private PlantRepository plantRepository;
-
+    @Cacheable("plants")
     @GetMapping("/plants")
     public ResponseEntity<List<Plant>> getAllPlants() {
         List<Plant> plants = plantRepository.findAll();
