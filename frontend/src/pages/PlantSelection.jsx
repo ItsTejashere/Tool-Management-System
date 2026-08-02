@@ -13,14 +13,30 @@ export default function PlantSelection() {
       navigate('/login');
       return;
     }
-    const fetchPlants = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/api/plants`);
-        setPlants(response.data);
-      } catch (error) {
-        console.error("Error fetching plants", error);
-      }
-    };
+   const fetchPlants = async () => {
+  // 1. Check if we already have the plants saved in the browser memory
+  const cachedPlants = sessionStorage.getItem('cachedPlants');
+  
+  if (cachedPlants) {
+    // 2. If yes, use the cache and skip the API call completely!
+    setPlants(JSON.parse(cachedPlants));
+    setIsLoading(false);
+    return; 
+  }
+
+  // 3. If no cache exists, go fetch it from Railway
+  try {
+    const response = await axios.get(`${API_URL}/api/plants`);
+    setPlants(response.data);
+    
+    // 4. Save the new data into the cache for next time
+    sessionStorage.setItem('cachedPlants', JSON.stringify(response.data));
+  } catch (error) {
+    console.error("Error fetching plants", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
     fetchPlants();
   }, [userRole, navigate]);
 
