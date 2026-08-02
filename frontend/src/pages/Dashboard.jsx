@@ -126,7 +126,7 @@ export default function Dashboard() {
           { title: 'Total Available Stock', value: totalAvailableStock, color: 'success', filterKey: 'AVAILABLE' },
           { title: 'Low Stock Alerts', value: lowStockItems, color: 'danger', filterKey: 'LOW_STOCK' },
           { title: 'In Sharpening', value: sharpeningItems, color: 'warning', filterKey: 'SHARPENING' },
-          { title: 'Damaged Tools', value: damagedItems, color: 'secondary', filterKey: 'DAMAGED' },
+          { title: 'SCRAPED', value: damagedItems, color: 'secondary', filterKey: 'DAMAGED' },
           { title: 'Out of Stock', value: unavailableItems, color: 'dark', filterKey: 'UNAVAILABLE' }
         ].map((metric, index) => {
           const isActive = activeFilter === metric.filterKey;
