@@ -13,27 +13,30 @@ export default function Dashboard() {
 
   const [tools, setTools] = useState([]); 
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // 🚀 NEW: State to track which tile is currently clicked
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [isSyncing, setIsSyncing] = useState(false); // 🚀 Tracks background refresh
 
   useEffect(() => {
-    if (!userRole) {
-      navigate('/login');
-      return; 
-    }
-    if (!activeProjectId) {
-      navigate('/project-selection'); 
-      return;
-    }
+    if (!userRole) { navigate('/login'); return; }
+    if (!activeProjectId) { navigate('/project-selection'); return; }
     
     const fetchTools = async () => {
+      // 🚀 CACHE: Load instantly so the user doesn't wait
+      const cachedTools = sessionStorage.getItem('dashboard_tools');
+      if (cachedTools) {
+        setTools(JSON.parse(cachedTools));
+      }
+
+      // 🚀 SILENT REFRESH: Always fetch real-time inventory in the background
+      setIsSyncing(true);
       try {
         const response = await axios.get(`${API_URL}/api/tools`);
-        console.log("DATA FROM JAVA:", response.data); // 🚀 ADD THIS LINE
         setTools(response.data);
+        sessionStorage.setItem('dashboard_tools', JSON.stringify(response.data));
       } catch (error) {
         console.error("Error fetching tools", error);
+      } finally {
+        setIsSyncing(false);
       }
     };
 
@@ -56,7 +59,9 @@ export default function Dashboard() {
       try {
         const response = await axios.delete(`${API_URL}/api/tools/${toolId}`);
         if (response.data.status === true) {
-          setTools(tools.filter(tool => tool.toolId !== toolId));
+          const updatedTools = tools.filter(tool => tool.toolId !== toolId);
+          setTools(updatedTools);
+          sessionStorage.setItem('dashboard_tools', JSON.stringify(updatedTools)); // Sync cache
         }
       } catch (error) {
         alert("Error: Could not delete tool.");
@@ -65,26 +70,20 @@ export default function Dashboard() {
   };
 
   const projectTools = tools.filter(tool => tool.projectId === parseInt(activeProjectId));
-// --- 2. DYNAMIC METRICS ---
+
   const totalTools = projectTools.length;
-  
-  // 🚀 THE FIX: Use reduce() to sum up the specific buckets!
   const totalAvailableStock = projectTools.reduce((sum, tool) => sum + Number(tool.availableQuantity || 0), 0);
-  
   const lowStockItems = projectTools.filter(tool => Number(tool.availableQuantity || 0) < tool.minimumQuantity).length;
-  
   const sharpeningItems = projectTools.reduce((sum, tool) => sum + Number(tool.sharpeningQuantity || 0), 0);
-  
   const damagedItems = projectTools.reduce((sum, tool) => sum + Number(tool.damagedQuantity || 0), 0);
   const unavailableItems = projectTools.filter(tool => tool.status === 'UNAVAILABLE').length;
-  // --- 3. SEARCH FILTER ---
+
   const displayTools = projectTools.filter(tool => {
     const matchesSearch = tool.toolCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           tool.toolName.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (!matchesSearch) return false;
 
-    // 🚀 THE FIX: Check the specific buckets!
     switch (activeFilter) {
       case 'AVAILABLE': return Number(tool.availableQuantity || 0) > 0;
       case 'LOW_STOCK': return Number(tool.availableQuantity || 0) < tool.minimumQuantity;
@@ -101,8 +100,9 @@ export default function Dashboard() {
       
       <div className="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
-          <h2 className="fw-bold text-primary mb-0">
+          <h2 className="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
             {activeProjectName} {isInventory ? 'Inventory' : 'Catalog'}
+            {isSyncing && <div className="spinner-grow spinner-grow-sm text-secondary" role="status" title="Syncing real-time data..."></div>}
           </h2>
           <span className="text-muted small">TMS Dashboard</span>
         </div>
@@ -119,7 +119,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🚀 UPGRADED: Clickable Metrics Cards */}
       <div className="row px-3 mb-4">
         {[
           { title: 'Total Tool Types', value: totalTools, color: 'primary', filterKey: 'ALL' },
@@ -157,7 +156,6 @@ export default function Dashboard() {
         <div className="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
           <h5 className="mb-0 fw-bold text-dark">
             {isInventory ? 'Tool Inventory' : 'Available Tools'}
-            {/* 🚀 UI Feedback so they know a filter is applied */}
             {activeFilter !== 'ALL' && (
                <span className="badge bg-secondary ms-3 align-middle" style={{fontSize: '0.75rem'}}>
                  Filtered: {activeFilter.replace('_', ' ')}
@@ -207,70 +205,64 @@ export default function Dashboard() {
             <tbody>
               {displayTools.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5 text-muted">
-                    No tools match the current filter or search.
+                  <td colSpan="8" className="text-center py-5 text-muted">
+                    {isSyncing ? "Syncing inventory data..." : "No tools match the current filter or search."}
                   </td>
                 </tr>
               ) : (
-                displayTools.map((tool) => {
-                  const isLowStock = tool.availableQuantity <= tool.minimumQuantity;
-
-                  return (
-                    <tr 
-                      key={tool.toolId}
-                      onClick={() => navigate(`/tool/${tool.toolId}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <td className="ps-4 fw-semibold">{tool.toolCode}</td>
-                      <td>{tool.toolName}</td>
-                      <td className="text-secondary fw-semibold">{tool.minimumQuantity}</td>
-                      <td>
-                       <span className={`badge ${Number(tool.availableQuantity) >= Number(tool.minimumQuantity) ? 'bg-success' : 'bg-danger'} rounded-pill px-3`}>
-                          {tool.availableQuantity}
+                displayTools.map((tool) => (
+                  <tr 
+                    key={tool.toolId}
+                    onClick={() => navigate(`/tool/${tool.toolId}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="ps-4 fw-semibold">{tool.toolCode}</td>
+                    <td>{tool.toolName}</td>
+                    <td className="text-secondary fw-semibold">{tool.minimumQuantity}</td>
+                    <td>
+                     <span className={`badge ${Number(tool.availableQuantity) >= Number(tool.minimumQuantity) ? 'bg-success' : 'bg-danger'} rounded-pill px-3`}>
+                        {tool.availableQuantity}
+                      </span>
+                    </td>
+                    <td className="text-secondary fw-semibold">
+                      {tool.storageLocation ? tool.storageLocation : '-'}
+                    </td>
+                    <td className="text-secondary fw-bold">{tool.drawingNumber || '-'}</td>
+                    <td>
+                      <span className={`text-${tool.status === 'AVAILABLE' ? 'success' : tool.status === 'DAMAGED' ? 'danger' : 'warning'} fw-semibold`} style={{ fontSize: '0.85rem' }}>
+                        ● {tool.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="text-end pe-4">
+                      {isInventory ? (
+                        <>
+                          <button 
+                            className="btn btn-sm btn-primary fw-bold me-2 shadow-sm" 
+                            onClick={(e) => { e.stopPropagation(); navigate(`/tool/${tool.toolId}`); }}
+                          >
+                            Manage
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-light text-primary me-2 fw-bold" 
+                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-tool/${tool.toolId}`); }}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-light text-danger fw-bold" 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(tool.toolId); }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-primary fw-bold small" style={{ textDecoration: 'none' }}>
+                          View History &rarr;
                         </span>
-                      </td>
-                      <td className="text-secondary fw-semibold">
-                        {tool.storageLocation ? tool.storageLocation : '-'}
-                      </td>
-                      <td className="text-secondary fw-bold">{tool.drawingNumber || '-'}</td>
-                      <td>
-                        <span className={`text-${tool.status === 'AVAILABLE' ? 'success' : tool.status === 'DAMAGED' ? 'danger' : 'warning'} fw-semibold`} style={{ fontSize: '0.85rem' }}>
-                          ● {tool.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      
-                      
-                      <td className="text-end pe-4">
-                        {isInventory ? (
-                          <>
-                            <button 
-                              className="btn btn-sm btn-primary fw-bold me-2 shadow-sm" 
-                              onClick={(e) => { e.stopPropagation(); navigate(`/tool/${tool.toolId}`); }}
-                            >
-                              Manage
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-light text-primary me-2 fw-bold" 
-                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-tool/${tool.toolId}`); }}
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              className="btn btn-sm btn-light text-danger fw-bold" 
-                              onClick={(e) => { e.stopPropagation(); handleDelete(tool.toolId); }}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-primary fw-bold small" style={{ textDecoration: 'none' }}>
-                            View History &rarr;
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
+                      )}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
