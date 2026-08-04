@@ -3,6 +3,8 @@ package com.tms.toolmanagementsystem.controller;
 import com.tms.toolmanagementsystem.entity.Tool;
 import com.tms.toolmanagementsystem.repository.ToolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,13 +18,16 @@ public class ToolController {
     @Autowired
     private ToolRepository toolRepository;
 
+    // 🚀 CACHE: Speeds up the Dashboard's background sync massively
+    @Cacheable("tools")
     @GetMapping
     public ResponseEntity<List<Tool>> getAllTools() {
         List<Tool> tools = toolRepository.findAllTools();
         return ResponseEntity.ok(tools);
     }
 
-    // Add this inside ToolController.java
+    // 🚀 EVICT: Wipe the "tools" cache because we have a new tool!
+    @CacheEvict(value = "tools", allEntries = true)
     @PostMapping
     public ResponseEntity<?> addTool(@RequestBody Tool tool) {
         boolean isSaved = toolRepository.saveTool(tool);
@@ -34,8 +39,8 @@ public class ToolController {
         }
     }
 
-    // Add this inside ToolController.java
-    // 🚀 FIXED: Removed the extra "/tools" from the path
+    // 🚀 EVICT: Wipe the "tools" cache because a tool was deleted!
+    @CacheEvict(value = "tools", allEntries = true)
     @DeleteMapping("/{toolId}")
     public ResponseEntity<?> deleteTool(@PathVariable Integer toolId) {
         boolean isDeleted = toolRepository.deleteTool(toolId);
@@ -46,8 +51,8 @@ public class ToolController {
             return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Failed to delete tool\"}");
         }
     }
-    // Fetch a single tool by ID for the Edit Page
-    // 1. Get a single tool by ID (for the Edit form)
+
+    // Do NOT cache the individual getToolById because Edit pages need real-time data
     @GetMapping("/{id}")
     public ResponseEntity<Tool> getToolById(@PathVariable Integer id) {
         Tool tool = toolRepository.getToolById(id);
@@ -57,7 +62,8 @@ public class ToolController {
         return ResponseEntity.notFound().build();
     }
 
-    // 2. Update the tool data when the user clicks 'Save Changes'
+    // 🚀 EVICT: Wipe the "tools" cache because a tool's details were changed!
+    @CacheEvict(value = "tools", allEntries = true)
     @PutMapping("/{id}")
     public ResponseEntity<java.util.Map<String, Object>> updateTool(@PathVariable Integer id, @RequestBody Tool tool) {
         tool.setToolId(id);
@@ -69,6 +75,4 @@ public class ToolController {
 
         return ResponseEntity.ok(response);
     }
-
-
 }
