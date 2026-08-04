@@ -9,8 +9,6 @@ export default function ToolDetails() {
   
   const userRole = localStorage.getItem('userRole');
   const activeDeptId = localStorage.getItem('activeDeptId');
-  
-  // 🚀 ROLE CHECK
   const isInventory = userRole === 'INVENTORY';
 
   const [movement, setMovement] = useState({
@@ -25,23 +23,18 @@ export default function ToolDetails() {
   const [availableSerials, setAvailableSerials] = useState([]);
   const [selectedSerials, setSelectedSerials] = useState([]); 
   const [stockInSerials, setStockInSerials] = useState(['']); 
-  
-  // 🚀 Search State
   const [serialSearch, setSerialSearch] = useState('');
   
   const [history, setHistory] = useState([]);
   const [message, setMessage] = useState(null);
+  
   const [machines, setMachines] = useState([]);
   const [projects, setProjects] = useState([]);
   
-  // Force history open by default if they are a VIEWER
   const [showHistory, setShowHistory] = useState(!isInventory);
-  
-  // 🚀 History Search & Bulk Delete States
   const [historySearch, setHistorySearch] = useState('');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
 
-  // 🚀 Delete a single row
   const handleDeleteHistoryRow = async (movementId) => {
     if (window.confirm("Are you sure you want to delete this log record?")) {
       try {
@@ -54,9 +47,8 @@ export default function ToolDetails() {
     }
   };
 
-  // 🚀 Wipe the whole ledger
   const handleClearAllHistory = async () => {
-    if (window.confirm("🚨 WARNING: Are you sure you want to wipe ALL history for this tool? This will permanently delete the logs to save space!")) {
+    if (window.confirm("🚨 WARNING: Are you sure you want to wipe ALL history for this tool?")) {
       try {
         await axios.delete(`${API_URL}/api/movements/tool/${id}/clear`);
         setHistory([]); 
@@ -67,7 +59,6 @@ export default function ToolDetails() {
     }
   };
 
-  // 🚀 Handle individual checkbox clicks
   const handleSelectOne = (movementId) => {
     if (selectedHistoryIds.includes(movementId)) {
       setSelectedHistoryIds(selectedHistoryIds.filter(selectedId => selectedId !== movementId));
@@ -76,7 +67,6 @@ export default function ToolDetails() {
     }
   };
 
-  // 🚀 Handle the "Select All" checkbox in the header
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedHistoryIds(displayHistory.map(r => r.movementId));
@@ -85,7 +75,6 @@ export default function ToolDetails() {
     }
   };
 
-  // 🚀 Bulk Delete Function using Promise.all()
   const handleBulkDelete = async () => {
     if (window.confirm(`Are you sure you want to delete ${selectedHistoryIds.length} selected records?`)) {
       try {
@@ -100,38 +89,49 @@ export default function ToolDetails() {
     }
   };
 
-  // 🚀 Filter the history array based on the search bar
   const displayHistory = history.filter(record => 
     historySearch === '' || 
     (record.involvedSerials && record.involvedSerials.toLowerCase().includes(historySearch.toLowerCase())) ||
     (record.movementType && record.movementType.toLowerCase().includes(historySearch.toLowerCase()))
   );
 
-  // Fetch Master Data 
   useEffect(() => {
     const fetchMasterData = async () => {
-      try {
-        const machineRes = await axios.get(`${API_URL}/api/machines`);
-        setMachines(machineRes.data);
-      } catch (error) { console.error("Failed to load machines"); }
+      // 🚀 CACHE: Load Static Machines and Projects from memory if possible
+      const cachedMachines = sessionStorage.getItem('master_machines');
+      const cachedProjects = sessionStorage.getItem(`projects_dept_${activeDeptId}`);
 
-      try {
-        const projectUrl = activeDeptId 
-            ? `${API_URL}/api/projects/${activeDeptId}` 
-            : `${API_URL}/api/projects`;
-        const projectRes = await axios.get(projectUrl);
-        setProjects(projectRes.data);
-      } catch (error) { console.error("Failed to load projects"); }
+      if (cachedMachines) {
+        setMachines(JSON.parse(cachedMachines));
+      } else {
+        try {
+          const machineRes = await axios.get(`${API_URL}/api/machines`);
+          setMachines(machineRes.data);
+          sessionStorage.setItem('master_machines', JSON.stringify(machineRes.data));
+        } catch (error) { console.error("Failed to load machines"); }
+      }
 
+      if (cachedProjects) {
+        setProjects(JSON.parse(cachedProjects));
+      } else {
+        try {
+          const projectUrl = activeDeptId ? `${API_URL}/api/projects/${activeDeptId}` : `${API_URL}/api/projects`;
+          const projectRes = await axios.get(projectUrl);
+          setProjects(projectRes.data);
+          sessionStorage.setItem(`projects_dept_${activeDeptId}`, JSON.stringify(projectRes.data));
+        } catch (error) { console.error("Failed to load projects"); }
+      }
+
+      // 🚀 REAL-TIME: Always fetch History fresh
       try {
         const historyRes = await axios.get(`${API_URL}/api/movements/tool/${id}`);
         setHistory(historyRes.data);
       } catch (error) { console.error("Failed to load history"); }
     };
+    
     fetchMasterData();
   }, [id, activeDeptId]);
 
-  // Fetch Dynamic Serial Numbers for the form
   useEffect(() => {
     if (!isInventory) return;
 
@@ -188,12 +188,14 @@ export default function ToolDetails() {
       if (response.data.status === true) {
         setMessage({ type: 'success', text: response.data.message });
         
-        // Clear forms and selections
         setSelectedSerials([]);
         setStockInSerials(['']);
         setSerialSearch(''); 
         setMovement({ ...movement, remarks: '', machineId: '', projectId: '' });
         
+        // 🚀 CACHE INVALIDATION: Wipe Dashboard cache so it fetches fresh numbers next time
+        sessionStorage.removeItem('dashboard_tools');
+
         setTimeout(() => setMessage(null), 3000);
         setTimeout(() => window.location.reload(), 1500); 
       }
@@ -208,7 +210,6 @@ export default function ToolDetails() {
         ← Back to Dashboard
       </button>
 
-      {/* --- MANAGER ONLY: TRANSACTION FORM --- */}
       {isInventory && (
         <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
           <div className="card-header bg-white py-3">
@@ -263,11 +264,9 @@ export default function ToolDetails() {
                               updated[index] = e.target.value;
                               setStockInSerials(updated);
                             }}
-                            // 🚀 THE SCANNER MAGIC: Intercept the scanner's 'Enter' key
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                e.preventDefault(); // Stop the form from submitting!
-                                // Move cursor to the next box automatically
+                                e.preventDefault(); 
                                 const nextInput = document.getElementById(`stock-in-${index + 1}`);
                                 if (nextInput) nextInput.focus();
                               }
@@ -311,7 +310,6 @@ export default function ToolDetails() {
                         placeholder="🔍 Search serial numbers..."
                         value={serialSearch}
                         onChange={(e) => setSerialSearch(e.target.value)}
-                        // 🚀 PREVENT SCANNER FROM SUBMITTING THE FORM
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') e.preventDefault(); 
                         }}
@@ -404,7 +402,6 @@ export default function ToolDetails() {
         </div>
       )}
       
-      {/* --- TOGGLE BUTTON (Managers Only) --- */}
       {isInventory && (
         <div className="text-center mt-5 mb-4">
           <button className="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm" onClick={() => setShowHistory(!showHistory)}>
@@ -413,7 +410,6 @@ export default function ToolDetails() {
         </div>
       )}
 
-      {/* --- MOVEMENT HISTORY LEDGER --- */}
       {showHistory && (
         <div className="card shadow-sm border-0 mx-auto mb-5" style={{ maxWidth: '900px' }}>
           
@@ -509,7 +505,6 @@ export default function ToolDetails() {
           </div>
         </div>
       )}
-      
     </div>
   );
 }
