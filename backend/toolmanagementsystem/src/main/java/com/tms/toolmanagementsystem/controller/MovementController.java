@@ -3,6 +3,7 @@ package com.tms.toolmanagementsystem.controller;
 import com.tms.toolmanagementsystem.entity.ToolMovement;
 import com.tms.toolmanagementsystem.repository.MovementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,8 @@ public class MovementController {
     @Autowired
     private MovementRepository movementRepository;
 
+    // 🚀 EVICT "tools": A tool was just checked in or out. The dashboard cache is now stale, wipe it!
+    @CacheEvict(value = "tools", allEntries = true)
     @PostMapping
     public ResponseEntity<?> recordMovement(@RequestBody ToolMovement movement) {
         boolean isRecorded = movementRepository.recordMovement(movement);
@@ -25,12 +28,14 @@ public class MovementController {
         }
     }
 
-    // Add this inside MovementController.java
+    // History requests are not cached because logs need to be real-time
     @GetMapping("/tool/{id}")
     public ResponseEntity<java.util.List<ToolMovement>> getToolHistory(@PathVariable Integer id) {
         return ResponseEntity.ok(movementRepository.getMovementsByToolId(id));
     }
-    // 🚀 NEW: Endpoint to delete one record
+
+    // 🚀 EVICT "tools": Deleting a log might reverse an inventory count, wipe the tools cache!
+    @CacheEvict(value = "tools", allEntries = true)
     @DeleteMapping("/{movementId}")
     public org.springframework.http.ResponseEntity<?> deleteMovement(@PathVariable Integer movementId) {
         boolean deleted = movementRepository.deleteMovement(movementId);
@@ -38,7 +43,8 @@ public class MovementController {
         return org.springframework.http.ResponseEntity.status(500).body(java.util.Map.of("status", false));
     }
 
-    // 🚀 NEW: Endpoint to wipe all history for a tool
+    // 🚀 EVICT "tools": Wiping history resets inventory, wipe the tools cache!
+    @CacheEvict(value = "tools", allEntries = true)
     @DeleteMapping("/tool/{toolId}/clear")
     public org.springframework.http.ResponseEntity<?> clearToolHistory(@PathVariable Integer toolId) {
         boolean cleared = movementRepository.clearToolHistory(toolId);
