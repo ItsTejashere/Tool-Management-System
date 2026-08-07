@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -38,7 +39,9 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody User loginRequest) {
         User dbUser = userRepository.findByUsername(loginRequest.getUsername());
 
-        if (dbUser != null && dbUser.getPassword().equals(loginRequest.getPassword())) {
+        // Verify password using BCrypt
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if (dbUser != null && encoder.matches(loginRequest.getPassword(), dbUser.getPassword())) {
 
             // Generate JWT token
             String token = jwtUtil.generateToken(dbUser);
