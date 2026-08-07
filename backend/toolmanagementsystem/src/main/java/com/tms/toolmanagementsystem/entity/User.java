@@ -8,6 +8,8 @@ public class User {
 
     // 🚀 NEW: Plant ID for Multi-Tenancy (Can be null for OWNER)
     private Integer plantId;
+    private Integer deptId;
+    private String email;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -23,4 +25,7 @@ public class User {
 
     public Integer getPlantId() { return plantId; }
     public void setPlantId(Integer plantId) { this.plantId = plantId; }
+
+    public Integer getDeptId() { return deptId; }
+    public void setDeptId(Integer deptId) { this.deptId = deptId; }
 }
