@@ -28,4 +28,7 @@ public class User {
 
     public Integer getDeptId() { return deptId; }
     public void setDeptId(Integer deptId) { this.deptId = deptId; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }
