@@ -478,16 +478,18 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
   `password` varchar(100) NOT NULL,
-  `role` enum('INVENTORY','VIEWER') NOT NULL
+  `role` enum('INVENTORY','VIEWER') NOT NULL,
+  `plant_id` int(11) DEFAULT NULL,
+  `dept_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
-(1, 'Inayat@123', 'qa@123', 'INVENTORY'),
-(2, 'Operator', '12345', 'VIEWER');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `plant_id`, `dept_id`) VALUES
+(1, 'Inayat@123', 'qa@123', 'INVENTORY', 1, 1),
+(2, 'Operator', '12345', 'VIEWER', 1, 2);
 
 --
 -- Indexes for dumped tables
