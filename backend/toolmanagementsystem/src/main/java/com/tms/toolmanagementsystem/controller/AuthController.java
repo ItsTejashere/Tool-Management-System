@@ -51,8 +51,8 @@ public class AuthController {
             resp.put("message", "Login Successful");
             resp.put("token", token);
             resp.put("role", dbUser.getRole());
-            resp.put("plantId", dbUser.getPlantId() != null ? dbUser.getPlantId() : "null");
-            resp.put("deptId", dbUser.getDeptId() != null ? dbUser.getDeptId() : "null");
+            resp.put("plantId", dbUser.getPlantId());
+            resp.put("deptId", dbUser.getDeptId());
 
             return ResponseEntity.ok(resp);
         }
