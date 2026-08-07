@@ -1,55 +1,137 @@
-package com.tms.toolmanagementsystem.repository;
+package com.tms.toolmanagementsystem.controller;
 
 import com.tms.toolmanagementsystem.entity.User;
-import com.tms.toolmanagementsystem.util.DBConnection;
-import org.springframework.stereotype.Repository;
+import com.tms.toolmanagementsystem.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import com.tms.toolmanagementsystem.util.JwtUtil;
 
-@Repository
-public class UserRepository {
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "${cors.allowed-origins}")
+public class AuthController {
 
-    public User findByUsername(String username) {
-        String sql = "SELECT * FROM users WHERE username = ?";
+    @Autowired
+    private UserRepository userRepository;
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    // 🚀 NEW: Spring's built-in email sender
+    @Autowired
+    private JavaMailSender mailSender;
+    @Value("${spring.mail.username}")
+    private String senderEmail;
 
-            stmt.setString(1, username);
-            ResultSet rs = stmt.executeQuery();
+    // Temporary storage for OTPs.
+    private Map<String, String> otpStorage = new HashMap<>();
 
-            if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getInt("id"));
-                user.setUsername(rs.getString("username"));
-                user.setPassword(rs.getString("password"));
-                user.setRole(rs.getString("role")); // Extracts the ENUM
-                user.setPlantId((Integer) rs.getObject("plant_id"));
-                user.setDeptId((Integer) rs.getObject("dept_id"));
-                user.setEmail(rs.getString("email"));
-                return user;
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User loginRequest) {
+        User dbUser = userRepository.findByUsername(loginRequest.getUsername());
+        boolean passwordMatches = false;
+
+        if (dbUser != null && dbUser.getPassword() != null) {
+            String rawPassword = loginRequest.getPassword();
+            String storedPassword = dbUser.getPassword();
+
+            if (passwordEncoder.matches(rawPassword, storedPassword)) {
+                passwordMatches = true;
+            } else if (rawPassword.equals(storedPassword)) {
+                passwordMatches = true;
+                // Upgrade legacy plaintext passwords to bcrypt on first successful login.
+                String hashedPassword = passwordEncoder.encode(rawPassword);
+                userRepository.updateUserPassword(dbUser.getUsername(), hashedPassword);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+
+        if (passwordMatches) {
+            // Generate JWT token
+            String token = jwtUtil.generateToken(dbUser);
+
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("status", true);
+            resp.put("message", "Login Successful");
+            resp.put("token", token);
+            resp.put("role", dbUser.getRole());
+            resp.put("plantId", dbUser.getPlantId());
+            resp.put("deptId", dbUser.getDeptId());
+
+            return ResponseEntity.ok(resp);
+        }
+
+        return ResponseEntity.status(401).body("{\"status\": false, \"message\": \"Invalid Credentials\"}");
     }
 
-    public boolean updateUserPassword(String username, String newPassword) {
-        String sql = "UPDATE users SET password = ? WHERE username = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    // 🚀 STEP 1: Generate OTP and send via EMAIL
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        User dbUser = userRepository.findByUsername(username);
 
-            stmt.setString(1, newPassword);
-            stmt.setString(2, username);
+        if (dbUser != null && dbUser.getEmail() != null && !dbUser.getEmail().isEmpty()) {
 
-            int updated = stmt.executeUpdate();
-            return updated > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
+            // Generate 4-digit OTP
+            String otp = String.format("%04d", new Random().nextInt(10000));
+            otpStorage.put(username, otp);
+
+            try {
+                // 🚀 Fire the Email!
+                SimpleMailMessage message = new SimpleMailMessage();
+
+                message.setFrom(senderEmail); // 🚀 ADD THIS LINE!
+
+                message.setTo(dbUser.getEmail());
+                message.setSubject("TMS Password Reset OTP");
+                message.setText("Hello " + username + ",\n\nYour OTP to reset your Tool Management System password is: " + otp + "\n\nIf you did not request this, please ignore this email.");
+
+                mailSender.send(message);
+
+                return ResponseEntity.ok("{\"status\": true, \"message\": \"OTP sent to registered email address.\"}");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(500).body("{\"status\": false, \"message\": \"Failed to send Email. Server error.\"}");
+            }
         }
-        return false;
+        return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Username not found or no email registered.\"}");
+    }
+
+    // 🚀 STEP 2: Verify the typed OTP
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String userOtp = request.get("otp");
+
+        if (otpStorage.containsKey(username) && otpStorage.get(username).equals(userOtp)) {
+            otpStorage.remove(username); // Clear it so it can't be reused
+            return ResponseEntity.ok("{\"status\": true, \"message\": \"OTP Verified.\"}");
+        }
+        return ResponseEntity.status(401).body("{\"status\": false, \"message\": \"Invalid or Expired OTP.\"}");
+    }
+
+    // 🚀 STEP 3: Save the newly created password
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String newPassword = request.get("newPassword");
+        String hashedPassword = passwordEncoder.encode(newPassword);
+
+        boolean isUpdated = userRepository.updateUserPassword(username, hashedPassword);
+
+        if (isUpdated) {
+            return ResponseEntity.ok("{\"status\": true, \"message\": \"Password changed successfully. Please log in.\"}");
+        }
+        return ResponseEntity.status(500).body("{\"status\": false, \"message\": \"Failed to update password.\"}");
     }
 }
