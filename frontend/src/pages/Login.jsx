@@ -48,15 +48,23 @@ export default function Login() {
           axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
         }
 
+        // Clear any previous user assignment state first
+        localStorage.removeItem('assignedPlantId');
+        localStorage.removeItem('assignedDeptId');
+        localStorage.removeItem('activePlantId');
+        localStorage.removeItem('activeDeptId');
+        localStorage.removeItem('activeProjectId');
+        localStorage.removeItem('activeProjectName');
+
         // Save user role
         const role = response.data.role;
         localStorage.setItem('userRole', role);
 
         // 🚀 Save assigned IDs so the next screens can filter the lists!
-        if (response.data.plantId && response.data.plantId !== 'null') {
+        if (response.data.plantId != null) {
           localStorage.setItem('assignedPlantId', response.data.plantId);
         }
-        if (response.data.deptId && response.data.deptId !== 'null') {
+        if (response.data.deptId != null) {
           localStorage.setItem('assignedDeptId', response.data.deptId);
         }
         
