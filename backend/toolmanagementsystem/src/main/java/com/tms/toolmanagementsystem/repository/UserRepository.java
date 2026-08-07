@@ -27,6 +27,7 @@ public class UserRepository {
                     user.setRole(rs.getString("role"));
                     user.setPlantId((Integer) rs.getObject("plant_id"));
                     user.setDeptId((Integer) rs.getObject("dept_id"));
+                    user.setEmail(rs.getString("email"));
                     return user;
                 }
             }
