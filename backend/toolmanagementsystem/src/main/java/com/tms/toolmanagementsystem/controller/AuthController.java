@@ -35,14 +35,28 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginRequest) {
         User dbUser = userRepository.findByUsername(loginRequest.getUsername());
+        boolean passwordMatches = false;
 
-        // Verify password using BCrypt
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        if (dbUser != null && encoder.matches(loginRequest.getPassword(), dbUser.getPassword())) {
+        if (dbUser != null && dbUser.getPassword() != null) {
+            String rawPassword = loginRequest.getPassword();
+            String storedPassword = dbUser.getPassword();
 
+            if (passwordEncoder.matches(rawPassword, storedPassword)) {
+                passwordMatches = true;
+            } else if (rawPassword.equals(storedPassword)) {
+                passwordMatches = true;
+                // Upgrade legacy plaintext passwords to bcrypt on first successful login.
+                String hashedPassword = passwordEncoder.encode(rawPassword);
+                userRepository.updateUserPassword(dbUser.getUsername(), hashedPassword);
+            }
+        }
+
+        if (passwordMatches) {
             // Generate JWT token
             String token = jwtUtil.generateToken(dbUser);
 
@@ -111,8 +125,9 @@ public class AuthController {
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         String username = request.get("username");
         String newPassword = request.get("newPassword");
+        String hashedPassword = passwordEncoder.encode(newPassword);
 
-        boolean isUpdated = userRepository.updateUserPassword(username, newPassword);
+        boolean isUpdated = userRepository.updateUserPassword(username, hashedPassword);
 
         if (isUpdated) {
             return ResponseEntity.ok("{\"status\": true, \"message\": \"Password changed successfully. Please log in.\"}");
