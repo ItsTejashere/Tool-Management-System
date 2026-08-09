@@ -17,7 +17,7 @@ public class ToolRepository {
         List<Tool> tools = new ArrayList<>();
 
 
-        // 🚀 THE UPGRADE: We are now counting REAL physical instances from your new table!
+        
         String sql = "SELECT t.*, " +
                 "(SELECT COUNT(*) FROM tool_instance ti WHERE ti.tool_id = t.tool_id AND ti.current_status = 'AVAILABLE') AS available_qty, " +
                 "(SELECT COUNT(*) FROM tool_instance ti WHERE ti.tool_id = t.tool_id AND ti.current_status = 'SHARPENING') AS sharpening_qty, " +
@@ -38,6 +38,7 @@ public class ToolRepository {
                 tool.setMinimumQuantity(rs.getInt("minimum_quantity"));
                 tool.setTotalQuantity(rs.getInt("total_quantity"));
                 tool.setDrawingNumber(rs.getString("drawing_number"));
+                tool.setSpecNumber(rs.getString("spec_number"));
 
 
                 // (Note: If you renamed this DB column to image_name earlier, change the string below!)
@@ -84,26 +85,27 @@ public class ToolRepository {
             con.setAutoCommit(false);
 
             // 🚀 THE FIX: drawing_number goes into the TOOL table! Added the 8th '?'
-            String sqlTool = "INSERT INTO tool (tool_code, tool_name, drawing_number, minimum_quantity, total_quantity, storage_location, status, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sqlTool = "INSERT INTO tool (tool_code, tool_name, drawing_number, spec_number, minimum_quantity, total_quantity, storage_location, status, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement psTool = con.prepareStatement(sqlTool, java.sql.Statement.RETURN_GENERATED_KEYS)) {
 
                 psTool.setString(1, tool.getToolCode());
                 psTool.setString(2, tool.getToolName());
-                psTool.setString(3, tool.getDrawingNumber()); // 🚀 NEW FIELD IS #3
-                psTool.setInt(4, tool.getMinimumQuantity());
+                psTool.setString(3, tool.getDrawingNumber());
+                psTool.setString(4, tool.getSpecNumber());
+                psTool.setInt(5, tool.getMinimumQuantity());
 
                 // The total quantity is just the size of the serials list!
                 int calculatedTotal = (tool.getSerials() != null) ? tool.getSerials().size() : 0;
-                psTool.setInt(5, calculatedTotal);
+                psTool.setInt(6, calculatedTotal);
 
-                psTool.setString(6, tool.getStorageLocation());
-                psTool.setString(7, calculatedTotal > 0 ? "AVAILABLE" : "UNAVAILABLE");
+                psTool.setString(7, tool.getStorageLocation());
+                psTool.setString(8, calculatedTotal > 0 ? "AVAILABLE" : "UNAVAILABLE");
 
                 if (tool.getProjectId() != null) {
-                    psTool.setInt(8, tool.getProjectId());
+                    psTool.setInt(9, tool.getProjectId());
                 } else {
-                    psTool.setNull(8, java.sql.Types.INTEGER);
+                    psTool.setNull(9, java.sql.Types.INTEGER);
                 }
 
                 psTool.executeUpdate();
@@ -223,6 +225,7 @@ public class ToolRepository {
                     tool.setStorageLocation(rs.getString("storage_location"));
                     tool.setStatus(rs.getString("status"));
                     tool.setDrawingNumber(rs.getString("drawing_number"));
+                    tool.setSpecNumber(rs.getString("spec_number"));
                     return tool;
                 }
             }
@@ -242,24 +245,25 @@ public class ToolRepository {
             con.setAutoCommit(false);
 
             // STEP 1: Update the main tool blueprint row
-            String sql = "UPDATE tool SET tool_code = ?, tool_name = ?, drawing_number = ?, minimum_quantity = ?, total_quantity = ?, storage_location = ?, status = ?, project_id = ? WHERE tool_id = ?";
+            String sql = "UPDATE tool SET tool_code = ?, tool_name = ?, drawing_number = ?, spec_number = ?, minimum_quantity = ?, total_quantity = ?, storage_location = ?, status = ?, project_id = ? WHERE tool_id = ?";
 
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, tool.getToolCode());
                 ps.setString(2, tool.getToolName());
                 ps.setString(3, tool.getDrawingNumber());
-                ps.setInt(4, tool.getMinimumQuantity());
-                ps.setInt(5, tool.getTotalQuantity());
-                ps.setString(6, tool.getStorageLocation());
-                ps.setString(7, tool.getStatus());
+                ps.setString(4, tool.getSpecNumber());
+                ps.setInt(5, tool.getMinimumQuantity());
+                ps.setInt(6, tool.getTotalQuantity());
+                ps.setString(7, tool.getStorageLocation());
+                ps.setString(8, tool.getStatus());
 
                 if (tool.getProjectId() != null) {
-                    ps.setInt(8, tool.getProjectId());
+                    ps.setInt(9, tool.getProjectId());
                 } else {
-                    ps.setNull(8, java.sql.Types.INTEGER);
+                    ps.setNull(9, java.sql.Types.INTEGER);
                 }
 
-                ps.setInt(9, tool.getToolId());
+                ps.setInt(10, tool.getToolId());
                 ps.executeUpdate();
             }
 
