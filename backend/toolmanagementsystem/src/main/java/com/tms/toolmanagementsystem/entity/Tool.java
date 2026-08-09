@@ -31,10 +31,13 @@ public class Tool {
     private Integer damagedQuantity;
     // Add this near your other variables
     private String drawingNumber;
+    private String specNumber;
 
     // Add this at the bottom with your getters/setters
     public String getDrawingNumber() { return drawingNumber; }
     public void setDrawingNumber(String drawingNumber) { this.drawingNumber = drawingNumber; }
+    public String getSpecNumber() { return specNumber; }
+    public void setSpecNumber(String specNumber) { this.specNumber = specNumber; }
     // --- ALL GETTERS AND SETTERS ---
     public Integer getToolId() { return toolId; }
     public void setToolId(Integer toolId) { this.toolId = toolId; }

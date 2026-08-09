@@ -95,7 +95,7 @@ export default function PlantSelection() {
               plants.map(p => (
                 <div key={p.plantId} className="col">
                   <div 
-                    className="card h-100 border-0 rounded-4 overflow-hidden shadow-sm"
+                    className="card h-100 panel-card border-0 rounded-4 overflow-hidden"
                     style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
                     onClick={() => handleSelectPlant(p.plantId)}
                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}

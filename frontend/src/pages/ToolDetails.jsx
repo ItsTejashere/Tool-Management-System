@@ -27,6 +27,8 @@ export default function ToolDetails() {
   
   const [history, setHistory] = useState([]);
   const [message, setMessage] = useState(null);
+  const [tool, setTool] = useState(null);
+  const [toolLoading, setToolLoading] = useState(true);
   
   const [machines, setMachines] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -127,6 +129,15 @@ export default function ToolDetails() {
         const historyRes = await axios.get(`${API_URL}/api/movements/tool/${id}`);
         setHistory(historyRes.data);
       } catch (error) { console.error("Failed to load history"); }
+
+      try {
+        const toolRes = await axios.get(`${API_URL}/api/tools/${id}`);
+        setTool(toolRes.data);
+      } catch (error) {
+        console.error("Failed to load tool details", error);
+      } finally {
+        setToolLoading(false);
+      }
     };
     
     fetchMasterData();
@@ -209,6 +220,54 @@ export default function ToolDetails() {
       <button className="btn btn-outline-secondary mb-4 shadow-sm" onClick={() => navigate('/dashboard')}>
         ← Back to Dashboard
       </button>
+
+      {toolLoading ? (
+        <div className="card panel-card border-0 mx-auto mb-4" style={{ maxWidth: '900px' }}>
+          <div className="card-body p-5 text-center">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-3 mb-0 text-muted">Loading tool details…</p>
+          </div>
+        </div>
+      ) : (
+        <div className="card panel-card border-0 mx-auto mb-4" style={{ maxWidth: '900px' }}>
+        <div className="card-body p-4">
+          <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+            <div>
+              <h2 className="fw-bold text-gradient-primary mb-2">{tool?.toolName || `Tool #${id}`}</h2>
+              <p className="text-muted mb-1">Code: <span className="fw-semibold text-dark">{tool?.toolCode || 'N/A'}</span></p>
+              <p className="text-muted mb-0">Location: <span className="fw-semibold text-dark">{tool?.storageLocation || 'N/A'}</span></p>
+            </div>
+            <div className="d-flex flex-wrap gap-2 align-items-center">
+              <span className={`badge ${tool?.status === 'AVAILABLE' ? 'bg-success' : tool?.status === 'UNAVAILABLE' ? 'bg-danger' : 'bg-warning'} text-uppercase`}>
+                {tool?.status || 'LOADING'}
+              </span>
+              <span className="badge bg-light text-dark">Spec: {tool?.specNumber || '-'}</span>
+              <span className="badge bg-light text-dark">Drawing: {tool?.drawingNumber || '-'}</span>
+            </div>
+          </div>
+
+          <div className="row row-cols-1 row-cols-md-3 g-3 mt-4">
+            <div className="col">
+              <div className="border rounded-3 p-3 bg-light h-100">
+                <p className="text-muted mb-1">Available Stock</p>
+                <h5 className="fw-bold mb-0">{tool?.availableQuantity ?? '-'}</h5>
+              </div>
+            </div>
+            <div className="col">
+              <div className="border rounded-3 p-3 bg-light h-100">
+                <p className="text-muted mb-1">Minimum Qty</p>
+                <h5 className="fw-bold mb-0">{tool?.minimumQuantity ?? '-'}</h5>
+              </div>
+            </div>
+            <div className="col">
+              <div className="border rounded-3 p-3 bg-light h-100">
+                <p className="text-muted mb-1">Tool Type</p>
+                <h5 className="fw-bold mb-0">{tool?.toolName ? 'Inventory Item' : '-'}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {isInventory && (
         <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>

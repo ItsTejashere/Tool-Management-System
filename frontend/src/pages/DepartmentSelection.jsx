@@ -121,7 +121,7 @@ export default function DepartmentSelection() {
               departments.map((d) => (
                 <div key={d.departmentId} className="col">
                   <div 
-                    className="card h-100 border-0 shadow-sm rounded-4 p-3" 
+                    className="card h-100 panel-card border-0 rounded-4 p-3" 
                     style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
                     onClick={() => handleSelectDepartment(d.departmentId)}
                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}

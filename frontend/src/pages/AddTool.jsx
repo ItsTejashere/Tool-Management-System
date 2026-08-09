@@ -17,7 +17,8 @@ export default function AddTool() {
   const [formData, setFormData] = useState({
     toolCode: '',
     toolName: '',
-    drawingNumber: '', // 🚀 NEW: Added to state
+    drawingNumber: '',
+    specNumber: '',
     minimumQuantity: '',
     storageLocation: ''
   });
@@ -83,9 +84,10 @@ export default function AddTool() {
         ← Back to Dashboard
       </button>
       
-      <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
+      <div className="card panel-card border-0 mx-auto" style={{ maxWidth: '600px' }}>
         <div className="card-header bg-white py-3">
-          <h4 className="mb-0 fw-bold text-primary">Add New Tool</h4>
+          <h4 className="mb-0 fw-bold text-gradient-primary">Add New Tool</h4>
+          <p className="text-muted small mb-0">Add tool metadata and initial stock with spec number support.</p>
         </div>
         
         <div className="card-body p-4">
@@ -108,12 +110,20 @@ export default function AddTool() {
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
             
-            {/* 🚀 NEW: Drawing Number Input */}
-            <div className="mb-4">
-              <label className="form-label fw-semibold">Drawing Number (Optional)</label>
-              <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
-                value={formData.drawingNumber} 
-                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            <div className="row g-3 mb-4">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Drawing Number (Optional)</label>
+                <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
+                  value={formData.drawingNumber} 
+                  onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Spec Number (Optional)</label>
+                <input type="text" className="form-control bg-light" placeholder="e.g., SPEC-1234"
+                  value={formData.specNumber}
+                  onChange={(e) => setFormData({...formData, specNumber: e.target.value})} />
+                <div className="form-text text-muted">Spec number is optional and may repeat across tools.</div>
+              </div>
             </div>
 
             <div className="row mb-3">

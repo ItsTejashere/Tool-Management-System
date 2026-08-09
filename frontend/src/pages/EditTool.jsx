@@ -16,6 +16,7 @@ export default function EditTool() {
     toolCode: '',
     toolName: '',
     drawingNumber: '',
+    specNumber: '',
     minimumQuantity: '',
     storageLocation: '',
     status: ''
@@ -92,9 +93,10 @@ export default function EditTool() {
         ← Back to Dashboard
       </button>
 
-      <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
+      <div className="card panel-card border-0 mx-auto" style={{ maxWidth: '600px' }}>
         <div className="card-header bg-white py-3">
-          <h4 className="mb-0 fw-bold text-primary">Edit Tool Details</h4>
+          <h4 className="mb-0 fw-bold text-gradient-primary">Edit Tool Details</h4>
+          <p className="text-muted small mb-0">Update the tool record, including spec number and stock details.</p>
         </div>
         
         <div className="card-body p-4">
@@ -115,11 +117,20 @@ export default function EditTool() {
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Drawing Number</label>
-              <input type="text" className="form-control bg-light"
-                value={formData.drawingNumber || ''} 
-                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            <div className="row g-3 mb-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Drawing Number</label>
+                <input type="text" className="form-control bg-light"
+                  value={formData.drawingNumber || ''} 
+                  onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Spec Number</label>
+                <input type="text" className="form-control bg-light"
+                  value={formData.specNumber || ''} 
+                  onChange={(e) => setFormData({...formData, specNumber: e.target.value})} />
+                <div className="form-text text-muted">Non-unique spec numbers are allowed and may be left blank.</div>
+              </div>
             </div>
 
             <div className="row mb-3">

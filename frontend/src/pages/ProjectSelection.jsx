@@ -173,7 +173,7 @@ export default function ProjectSelection() {
               filteredProjects.map((p) => (
                 <div key={p.projectId} className="col">
                   <div 
-                    className="card h-100 border-0 shadow-sm rounded-4 p-3 position-relative" 
+                    className="card h-100 panel-card border-0 rounded-4 p-3 position-relative" 
                     style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
                     onClick={() => handleSelectProject(p.projectId, p.projectName)}
                     onMouseEnter={(e) => {
