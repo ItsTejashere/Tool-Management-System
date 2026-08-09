@@ -81,6 +81,10 @@ public class AuthController {
         User dbUser = userRepository.findByUsername(username);
 
         if (dbUser != null && dbUser.getEmail() != null && !dbUser.getEmail().isEmpty()) {
+            String toAddress = dbUser.getEmail().trim();
+            if (!toAddress.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Invalid email address configured for user.\"}");
+            }
 
             // Generate 4-digit OTP
             String otp = String.format("%04d", new Random().nextInt(10000));
@@ -92,7 +96,7 @@ public class AuthController {
 
                 message.setFrom(senderEmail); // 🚀 ADD THIS LINE!
 
-                message.setTo(dbUser.getEmail());
+                message.setTo(toAddress);
                 message.setSubject("TMS Password Reset OTP");
                 message.setText("Hello " + username + ",\n\nYour OTP to reset your Tool Management System password is: " + otp + "\n\nIf you did not request this, please ignore this email.");
 
