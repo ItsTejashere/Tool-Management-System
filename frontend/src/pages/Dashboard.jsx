@@ -79,8 +79,11 @@ export default function Dashboard() {
   const unavailableItems = projectTools.filter(tool => tool.status === 'UNAVAILABLE').length;
 
   const displayTools = projectTools.filter(tool => {
-    const matchesSearch = tool.toolCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tool.toolName.toLowerCase().includes(searchTerm.toLowerCase());
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchesSearch = (tool.toolCode || '').toString().toLowerCase().includes(lowerSearch) ||
+                          (tool.toolName || '').toString().toLowerCase().includes(lowerSearch) ||
+                          (tool.drawingNumber || '').toString().toLowerCase().includes(lowerSearch) ||
+                          (tool.specNumber || '').toString().toLowerCase().includes(lowerSearch);
     
     if (!matchesSearch) return false;
 
@@ -172,10 +175,10 @@ export default function Dashboard() {
             <input 
               type="text" 
               className="form-control bg-light border-0" 
-              placeholder="Search tools by code..." 
+              placeholder="Search by code, name, drawing no., or spec no..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '250px' }}
+              style={{ width: '320px' }}
             />
             {isInventory && (
               <button 
@@ -198,6 +201,7 @@ export default function Dashboard() {
                 <th>Available</th>
                 <th>Location</th>
                 <th>Drawing No.</th>
+                <th>Spec No.</th>
                 <th>Status</th>
                 <th className="text-end pe-4">{isInventory ? 'Actions' : 'Details'}</th>
               </tr>
@@ -205,7 +209,7 @@ export default function Dashboard() {
             <tbody>
               {displayTools.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-5 text-muted">
+                  <td colSpan="9" className="text-center py-5 text-muted">
                     {isSyncing ? "Syncing inventory data..." : "No tools match the current filter or search."}
                   </td>
                 </tr>
@@ -228,6 +232,7 @@ export default function Dashboard() {
                       {tool.storageLocation ? tool.storageLocation : '-'}
                     </td>
                     <td className="text-secondary fw-bold">{tool.drawingNumber || '-'}</td>
+                    <td className="text-secondary fw-bold">{tool.specNumber || '-'}</td>
                     <td>
                       <span className={`text-${tool.status === 'AVAILABLE' ? 'success' : tool.status === 'DAMAGED' ? 'danger' : 'warning'} fw-semibold`} style={{ fontSize: '0.85rem' }}>
                         ● {tool.status.replace('_', ' ')}
