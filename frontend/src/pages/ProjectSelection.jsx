@@ -133,7 +133,7 @@ export default function ProjectSelection() {
             </div>
           </div>
 
-          {userRole === 'INVENTORY' && (
+          {(userRole === 'INVENTORY' || userRole === 'OWNER') && (
             <div className="col-md-6">
               <div className="card border-0 shadow-sm rounded-4 p-2 bg-white">
                 <form onSubmit={handleAddProject} className="d-flex gap-2 align-items-center mb-0">
@@ -188,7 +188,7 @@ export default function ProjectSelection() {
                     <div className="card-body d-flex justify-content-between align-items-center">
                       <h4 className="fw-bold text-dark mb-0">{p.projectName}</h4>
                       
-                      {userRole === 'INVENTORY' && (
+                      {(userRole === 'INVENTORY' || userRole === 'OWNER') && (
                         <button 
                           className="btn btn-outline-danger btn-sm border-0 px-2"
                           title="Delete Project"

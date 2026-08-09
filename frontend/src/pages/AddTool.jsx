@@ -9,7 +9,7 @@ export default function AddTool() {
   const activeProjectId = localStorage.getItem('activeProjectId');
 
   useEffect(() => {
-    if (userRole !== 'INVENTORY') {
+    if (userRole !== 'INVENTORY' && userRole !== 'OWNER') {
       navigate('/dashboard');
     }
   }, [userRole, navigate]);

@@ -10,6 +10,7 @@ export default function Dashboard() {
   const activeProjectName = localStorage.getItem('activeProjectName');
 
   const isInventory = userRole === 'INVENTORY';
+  const canManage = userRole === 'INVENTORY' || userRole === 'OWNER';
 
   const [tools, setTools] = useState([]); 
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,8 +111,8 @@ export default function Dashboard() {
           <span className="text-muted small">TMS Dashboard</span>
         </div>
         <div className="d-flex align-items-center gap-3">
-          <span className={`fw-semibold border px-3 py-1 rounded-pill ${isInventory ? 'text-secondary border-secondary' : 'text-info border-info'}`}>
-            Role: {isInventory ? 'INVENTORY' : 'VIEWER'}
+          <span className={`fw-semibold border px-3 py-1 rounded-pill ${canManage ? 'text-secondary border-secondary' : 'text-info border-info'}`}>
+            Role: {userRole || 'VIEWER'}
           </span>
           <button className="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onClick={handleChangeProject}>
             Change Project
@@ -180,7 +181,7 @@ export default function Dashboard() {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '320px' }}
             />
-            {isInventory && (
+            {canManage && (
               <button 
                 className="btn btn-primary fw-bold text-nowrap rounded-3 shadow-sm"
                 onClick={() => navigate('/add-tool')} 
@@ -239,7 +240,7 @@ export default function Dashboard() {
                       </span>
                     </td>
                     <td className="text-end pe-4">
-                      {isInventory ? (
+                      {canManage ? (
                         <>
                           <button 
                             className="btn btn-sm btn-primary fw-bold me-2 shadow-sm" 

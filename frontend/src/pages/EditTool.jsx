@@ -9,7 +9,7 @@ export default function EditTool() {
   const userRole = localStorage.getItem('userRole');
 
   useEffect(() => {
-    if (userRole !== 'INVENTORY') navigate('/dashboard');
+    if (userRole !== 'INVENTORY' && userRole !== 'OWNER') navigate('/dashboard');
   }, [userRole, navigate]);
 
   const [formData, setFormData] = useState({
