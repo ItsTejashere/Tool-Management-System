@@ -110,20 +110,12 @@ export default function AddTool() {
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
             
-            <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Drawing Number (Optional)</label>
-                <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
-                  value={formData.drawingNumber} 
-                  onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Spec Number (Optional)</label>
-                <input type="text" className="form-control bg-light" placeholder="e.g., SPEC-1234"
-                  value={formData.specNumber}
-                  onChange={(e) => setFormData({...formData, specNumber: e.target.value})} />
-                <div className="form-text text-muted">Spec number is optional and may repeat across tools.</div>
-              </div>
+            {/* 🚀 NEW: Drawing Number Input */}
+            <div className="mb-4">
+              <label className="form-label fw-semibold">Drawing Number (Optional)</label>
+              <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
+                value={formData.drawingNumber} 
+                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
             </div>
 
             <div className="row mb-3">

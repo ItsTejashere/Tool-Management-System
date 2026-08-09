@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 public class UserRepository {
 
     public User findByUsername(String username) {
-        String sql = "SELECT id, username, password, role, plant_id, dept_id FROM users WHERE username = ?";
+        String sql = "SELECT id, username, password, role, plant_id, dept_id, email FROM users WHERE username = ?";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

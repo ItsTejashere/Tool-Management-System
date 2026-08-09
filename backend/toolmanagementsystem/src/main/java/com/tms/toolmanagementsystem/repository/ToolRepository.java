@@ -17,7 +17,7 @@ public class ToolRepository {
         List<Tool> tools = new ArrayList<>();
 
 
-        // 🚀 THE UPGRADE: We are now counting REAL physical instances from your new table!
+        
         String sql = "SELECT t.*, " +
                 "(SELECT COUNT(*) FROM tool_instance ti WHERE ti.tool_id = t.tool_id AND ti.current_status = 'AVAILABLE') AS available_qty, " +
                 "(SELECT COUNT(*) FROM tool_instance ti WHERE ti.tool_id = t.tool_id AND ti.current_status = 'SHARPENING') AS sharpening_qty, " +
