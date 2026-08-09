@@ -12,10 +12,11 @@ public class Tool {
     private String status;
     private Integer projectId;
     private List<String> serials;
-    // 🚀 NEW: Link this tool to a specific plant for Multi-Tenancy!
-    private Integer plantId;
 
-    // ... your other getters and setters ...
+    private Integer plantId;
+    private String spec_Number;
+     public String getSpecNumber() { return specNumber; }
+    public void setSpecNumber(String specNumber) { this.specNumber = specNumber; }
 
     public Integer getPlantId() {
         return plantId;
@@ -25,17 +26,13 @@ public class Tool {
         this.plantId = plantId;
     }
 
-    // 🚀 THE MISSING BUCKETS
     private Integer availableQuantity;
     private Integer sharpeningQuantity;
     private Integer damagedQuantity;
-    // Add this near your other variables
-    private String drawingNumber;
-
-    // Add this at the bottom with your getters/setters
+    private String drawingNumber; 
     public String getDrawingNumber() { return drawingNumber; }
     public void setDrawingNumber(String drawingNumber) { this.drawingNumber = drawingNumber; }
-    // --- ALL GETTERS AND SETTERS ---
+    
     public Integer getToolId() { return toolId; }
     public void setToolId(Integer toolId) { this.toolId = toolId; }
 
