@@ -268,6 +268,7 @@ export default function ToolDetails() {
           </div>
         </div>
       </div>
+      )}
 
       {isInventory && (
         <div className="card shadow-sm border-0 mx-auto" style={{ maxWidth: '600px' }}>
