@@ -16,6 +16,7 @@ export default function EditTool() {
     toolCode: '',
     toolName: '',
     drawingNumber: '',
+    specNumber: '',
     minimumQuantity: '',
     storageLocation: '',
     status: ''
@@ -115,11 +116,19 @@ export default function EditTool() {
                 onChange={(e) => setFormData({...formData, toolName: e.target.value})} />
             </div>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Drawing Number</label>
-              <input type="text" className="form-control bg-light"
-                value={formData.drawingNumber || ''} 
-                onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            <div className="row g-3 mb-3">
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Drawing Number</label>
+                <input type="text" className="form-control bg-light"
+                  value={formData.drawingNumber || ''} 
+                  onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw-semibold">Spec Number</label>
+                <input type="text" className="form-control bg-light"
+                  value={formData.specNumber || ''} 
+                  onChange={(e) => setFormData({...formData, specNumber: e.target.value})} />
+              </div>
             </div>
 
             <div className="row mb-3">
