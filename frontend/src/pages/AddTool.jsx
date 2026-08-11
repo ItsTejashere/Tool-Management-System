@@ -86,7 +86,7 @@ export default function AddTool() {
       <div className="card panel-card border-0 mx-auto" style={{ maxWidth: '600px' }}>
         <div className="card-header bg-white py-3">
           <h4 className="mb-0 fw-bold text-gradient-primary">Add New Tool</h4>
-          <p className="text-muted small mb-0">Add tool metadata and initial stock with spec number support.</p>
+          <p className="text-muted small mb-0">Add tool metadata and initial stock.</p>
         </div>
         
         <div className="card-body p-4">
