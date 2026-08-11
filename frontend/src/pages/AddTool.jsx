@@ -18,6 +18,7 @@ export default function AddTool() {
     toolCode: '',
     toolName: '',
     drawingNumber: '',
+    specNumber: '',
     minimumQuantity: '',
     storageLocation: ''
   });
@@ -86,7 +87,7 @@ export default function AddTool() {
       <div className="card panel-card border-0 mx-auto" style={{ maxWidth: '600px' }}>
         <div className="card-header bg-white py-3">
           <h4 className="mb-0 fw-bold text-gradient-primary">Add New Tool</h4>
-          <p className="text-muted small mb-0">Add tool metadata and initial stock.</p>
+          <p className="text-muted small mb-0">Add tool metadata and initial stock with spec number support.</p>
         </div>
         
         <div className="card-body p-4">
@@ -115,6 +116,14 @@ export default function AddTool() {
               <input type="text" className="form-control bg-light" placeholder="e.g., DWG-1029"
                 value={formData.drawingNumber} 
                 onChange={(e) => setFormData({...formData, drawingNumber: e.target.value})} />
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label fw-semibold">Spec Number (Optional)</label>
+              <input type="text" className="form-control bg-light" placeholder="e.g., SPEC-1234"
+                value={formData.specNumber} 
+                onChange={(e) => setFormData({...formData, specNumber: e.target.value})} />
+              <div className="form-text text-muted">Non-unique spec numbers are allowed and may be left blank.</div>
             </div>
 
             <div className="row mb-3">
