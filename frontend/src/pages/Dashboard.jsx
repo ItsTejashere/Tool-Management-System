@@ -114,6 +114,11 @@ export default function Dashboard() {
           <span className={`fw-semibold border px-3 py-1 rounded-pill ${canManage ? 'text-secondary border-secondary' : 'text-info border-info'}`}>
             Role: {userRole || 'VIEWER'}
           </span>
+          {userRole === 'OWNER' && (
+            <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-users')}>
+              Manage Users
+            </button>
+          )}
           <button className="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onClick={handleChangeProject}>
             Change Project
           </button>
