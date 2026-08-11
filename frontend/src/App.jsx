@@ -7,6 +7,7 @@ import EditTool from './pages/EditTool';
 import ProjectSelection from './pages/ProjectSelection';
 import PlantSelection from './pages/PlantSelection';
 import DepartmentSelection from './pages/DepartmentSelection';
+import OwnerUserManagement from './pages/OwnerUserManagement';
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/add-tool" element={<AddTool />} />
         <Route path="/tool/:id" element={<ToolDetails />} />
         <Route path="/edit-tool/:id" element={<EditTool />} />
+        <Route path="/owner-users" element={<OwnerUserManagement />} />
         <Route path="/plant-selection" element={<PlantSelection />} />
         <Route path="/department-selection" element={<DepartmentSelection />} />
         <Route path="/project-selection" element={<ProjectSelection />} />
