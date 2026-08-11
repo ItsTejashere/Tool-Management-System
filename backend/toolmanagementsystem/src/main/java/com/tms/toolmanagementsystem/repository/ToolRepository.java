@@ -13,6 +13,14 @@ import java.util.List;
 @Repository
 public class ToolRepository {
 
+    private void setNullableString(PreparedStatement ps, int index, String value) throws java.sql.SQLException {
+        if (value == null || value.trim().isEmpty()) {
+            ps.setNull(index, java.sql.Types.VARCHAR);
+        } else {
+            ps.setString(index, value);
+        }
+    }
+
     public List<Tool> findAllTools() {
         List<Tool> tools = new ArrayList<>();
 
@@ -89,10 +97,10 @@ public class ToolRepository {
 
             try (PreparedStatement psTool = con.prepareStatement(sqlTool, java.sql.Statement.RETURN_GENERATED_KEYS)) {
 
-                psTool.setString(1, tool.getToolCode());
+                setNullableString(psTool, 1, tool.getToolCode());
                 psTool.setString(2, tool.getToolName());
-                psTool.setString(3, tool.getDrawingNumber());
-                psTool.setString(4, tool.getSpecNumber());
+                setNullableString(psTool, 3, tool.getDrawingNumber());
+                setNullableString(psTool, 4, tool.getSpecNumber());
                 psTool.setInt(5, tool.getMinimumQuantity());
 
                 // The total quantity is just the size of the serials list!
@@ -248,10 +256,10 @@ public class ToolRepository {
             String sql = "UPDATE tool SET tool_code = ?, tool_name = ?, drawing_number = ?, spec_number = ?, minimum_quantity = ?, total_quantity = ?, storage_location = ?, status = ?, project_id = ? WHERE tool_id = ?";
 
             try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setString(1, tool.getToolCode());
+                setNullableString(ps, 1, tool.getToolCode());
                 ps.setString(2, tool.getToolName());
-                ps.setString(3, tool.getDrawingNumber());
-                ps.setString(4, tool.getSpecNumber());
+                setNullableString(ps, 3, tool.getDrawingNumber());
+                setNullableString(ps, 4, tool.getSpecNumber());
                 ps.setInt(5, tool.getMinimumQuantity());
                 ps.setInt(6, tool.getTotalQuantity());
                 ps.setString(7, tool.getStorageLocation());

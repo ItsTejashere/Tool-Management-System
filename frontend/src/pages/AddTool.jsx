@@ -18,7 +18,6 @@ export default function AddTool() {
     toolCode: '',
     toolName: '',
     drawingNumber: '',
-    specNumber: '',
     minimumQuantity: '',
     storageLocation: ''
   });
@@ -98,7 +97,7 @@ export default function AddTool() {
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label className="form-label fw-semibold">Tool Code</label>
-              <input type="text" className="form-control bg-light" required placeholder="e.g., EM-10-CAR"
+              <input type="text" className="form-control bg-light" placeholder="e.g., EM-10-CAR"
                 value={formData.toolCode} 
                 onChange={(e) => setFormData({...formData, toolCode: e.target.value})} />
             </div>
