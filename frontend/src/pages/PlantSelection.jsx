@@ -45,12 +45,18 @@ export default function PlantSelection() {
   const handleSelectPlant = (plantId) => {
     const assignedPlantId = localStorage.getItem('assignedPlantId');
 
-    // 🚀 NEW SECURITY CHECK: Is the door locked?
-    if (userRole !== 'OWNER' && assignedPlantId && assignedPlantId !== 'null') {
+    // 🚀 NEW SECURITY CHECK: Deny non-OWNER users who have no assigned facility
+    if (userRole !== 'OWNER') {
+      if (!assignedPlantId || assignedPlantId === 'null') {
+        setError("Access Denied: No facility assigned to your account. Contact the administrator.");
+        setTimeout(() => setError(null), 3000);
+        return; // Block navigation when there's no assigned plant
+      }
+
       if (plantId.toString() !== assignedPlantId) {
         setError("Access Denied: You are not authorized to access this facility.");
         setTimeout(() => setError(null), 3000); // Clear the error after 3 seconds
-        return; // 🚀 Stops them from navigating!
+        return; // Stops them from navigating!
       }
     }
 

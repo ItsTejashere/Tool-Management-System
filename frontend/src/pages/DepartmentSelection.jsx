@@ -65,18 +65,31 @@ export default function DepartmentSelection() {
     const assignedPlantId = localStorage.getItem('assignedPlantId');
     const assignedDeptId = localStorage.getItem('assignedDeptId');
 
-    // If they are not an OWNER, enforce the rules!
+    // If they are not an OWNER, enforce the rules strictly
     if (userRole !== 'OWNER') {
-      
+      // If the user has no assigned plant, deny access (prevents implicit OWNER access)
+      if (!assignedPlantId || assignedPlantId === 'null') {
+        setError("Access Denied: No facility assigned to your account. Contact the administrator.");
+        setTimeout(() => setError(null), 3000);
+        return;
+      }
+
       // RULE 1: Check the Plant Hierarchy (Does this Plant match their profile?)
-      if (assignedPlantId && assignedPlantId !== 'null' && activePlantId !== assignedPlantId) {
+      if (activePlantId !== assignedPlantId) {
         setError("Access Denied: You cannot access departments inside this facility.");
         setTimeout(() => setError(null), 3000);
         return; // Block navigation!
       }
 
+      // If the user has no assigned department, deny access
+      if (!assignedDeptId || assignedDeptId === 'null') {
+        setError("Access Denied: No department assigned to your account. Contact the administrator.");
+        setTimeout(() => setError(null), 3000);
+        return;
+      }
+
       // RULE 2: Check the Department Hierarchy (Does this Dept match their profile?)
-      if (assignedDeptId && assignedDeptId !== 'null' && clickedDeptId.toString() !== assignedDeptId) {
+      if (clickedDeptId.toString() !== assignedDeptId) {
         setError("Access Denied: You are only authorized to access your assigned department.");
         setTimeout(() => setError(null), 3000);
         return; // Block navigation!
