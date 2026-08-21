@@ -10,6 +10,10 @@ export default function ToolDetails() {
   const userRole = localStorage.getItem('userRole');
   const activeDeptId = localStorage.getItem('activeDeptId');
   const isInventory = userRole === 'INVENTORY';
+  
+  // 🚀 SECURITY FIX: Validate assigned IDs for non-OWNER users
+  const assignedPlantId = localStorage.getItem('assignedPlantId');
+  const assignedDeptId = localStorage.getItem('assignedDeptId');
 
   const [movement, setMovement] = useState({
     toolId: id,
@@ -109,6 +113,15 @@ export default function ToolDetails() {
   );
 
   useEffect(() => {
+    // 🚀 SECURITY FIX: Block unassigned non-OWNER users from accessing tool details
+    if (userRole && userRole !== 'OWNER') {
+      if (!assignedPlantId || assignedPlantId === 'null' || !assignedDeptId || assignedDeptId === 'null') {
+        console.warn("SECURITY: User blocked - no assigned plant/dept for tool access");
+        navigate('/plant-selection');
+        return;
+      }
+    }
+    
     const fetchMasterData = async () => {
       // 🚀 CACHE: Load Static Machines and Projects from memory if possible
       const cachedMachines = sessionStorage.getItem('master_machines');

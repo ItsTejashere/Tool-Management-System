@@ -8,6 +8,10 @@ export default function Dashboard() {
   const userRole = localStorage.getItem('userRole'); 
   const activeProjectId = localStorage.getItem('activeProjectId');
   const activeProjectName = localStorage.getItem('activeProjectName');
+  
+  // 🚀 SECURITY FIX: Validate assigned IDs for non-OWNER users
+  const assignedPlantId = localStorage.getItem('assignedPlantId');
+  const assignedDeptId = localStorage.getItem('assignedDeptId');
 
   const isInventory = userRole === 'INVENTORY';
   const canManage = userRole === 'INVENTORY' || userRole === 'OWNER';
@@ -19,6 +23,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!userRole) { navigate('/login'); return; }
+    
+    // 🚀 SECURITY FIX: Block unassigned non-OWNER users from accessing dashboard
+    if (userRole !== 'OWNER') {
+      if (!assignedPlantId || assignedPlantId === 'null' || !assignedDeptId || assignedDeptId === 'null') {
+        console.warn("SECURITY: User blocked - no assigned plant/dept");
+        navigate('/plant-selection');
+        return;
+      }
+    }
+    
     if (!activeProjectId) { navigate('/project-selection'); return; }
     
     const fetchTools = async () => {
