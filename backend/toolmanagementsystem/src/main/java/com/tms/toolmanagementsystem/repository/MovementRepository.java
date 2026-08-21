@@ -12,6 +12,8 @@ import java.sql.Types;
 public class MovementRepository {
 
     public boolean recordMovement(ToolMovement movement) {
+        DBConnection.ensureToolInstanceSerialIndex();
+
         Connection con = null;
         try {
             con = DBConnection.getConnection();

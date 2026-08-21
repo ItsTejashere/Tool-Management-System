@@ -144,6 +144,20 @@ CREATE TABLE `tool_movement` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tool_change_history`
+--
+
+CREATE TABLE `tool_change_history` (
+  `history_id` int(11) NOT NULL,
+  `tool_id` int(11) NOT NULL,
+  `field_name` varchar(100) NOT NULL,
+  `old_value` varchar(500) DEFAULT NULL,
+  `new_value` varchar(500) DEFAULT NULL,
+  `changed_by` varchar(100) DEFAULT NULL,
+  `changed_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
 -- Table structure for table `users`
 --
 
@@ -202,8 +216,7 @@ ALTER TABLE `tool`
 --
 ALTER TABLE `tool_instance`
   ADD PRIMARY KEY (`instance_id`),
-  ADD UNIQUE KEY `serial_number` (`serial_number`),
-  ADD UNIQUE KEY `serial_number_2` (`serial_number`),
+  ADD UNIQUE KEY `uq_tool_serial` (`tool_id`, `serial_number`),
   ADD KEY `tool_id` (`tool_id`);
 
 --
@@ -214,6 +227,13 @@ ALTER TABLE `tool_movement`
   ADD KEY `tool_id` (`tool_id`),
   ADD KEY `machine_id` (`machine_id`),
   ADD KEY `project_id` (`project_id`);
+
+--
+-- Indexes for table `tool_change_history`
+--
+ALTER TABLE `tool_change_history`
+  ADD PRIMARY KEY (`history_id`),
+  ADD KEY `tool_id` (`tool_id`);
 
 --
 -- Indexes for table `users`
@@ -267,6 +287,12 @@ ALTER TABLE `tool_instance`
 --
 ALTER TABLE `tool_movement`
   MODIFY `movement_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+
+--
+-- AUTO_INCREMENT for table `tool_change_history`
+--
+ALTER TABLE `tool_change_history`
+  MODIFY `history_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
 -- AUTO_INCREMENT for table `users`

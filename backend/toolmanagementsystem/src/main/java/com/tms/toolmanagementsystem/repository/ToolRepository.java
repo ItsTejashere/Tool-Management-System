@@ -21,6 +21,22 @@ public class ToolRepository {
         }
     }
 
+    private void saveChangeIfDifferent(Connection con, Integer toolId, String fieldName, String oldValue, String newValue, String changedBy) throws java.sql.SQLException {
+        String normalizedOld = oldValue == null ? "" : oldValue;
+        String normalizedNew = newValue == null ? "" : newValue;
+        if (!normalizedOld.equals(normalizedNew)) {
+            String sql = "INSERT INTO tool_change_history (tool_id, field_name, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, toolId);
+                ps.setString(2, fieldName);
+                if (normalizedOld.isEmpty()) ps.setNull(3, java.sql.Types.VARCHAR); else ps.setString(3, normalizedOld);
+                if (normalizedNew.isEmpty()) ps.setNull(4, java.sql.Types.VARCHAR); else ps.setString(4, normalizedNew);
+                if (changedBy == null || changedBy.trim().isEmpty()) ps.setNull(5, java.sql.Types.VARCHAR); else ps.setString(5, changedBy);
+                ps.executeUpdate();
+            }
+        }
+    }
+
     public List<Tool> findAllTools() {
         List<Tool> tools = new ArrayList<>();
 
@@ -87,6 +103,8 @@ public class ToolRepository {
     }
     // 🚀 1. THE FIXED saveTool()
     public boolean saveTool(Tool tool) {
+        DBConnection.ensureToolInstanceSerialIndex();
+
         Connection con = null;
         try {
             con = DBConnection.getConnection();
@@ -252,6 +270,8 @@ public class ToolRepository {
             con = DBConnection.getConnection();
             con.setAutoCommit(false);
 
+            Tool existing = getToolById(tool.getToolId());
+
             // STEP 1: Update the main tool blueprint row
             String sql = "UPDATE tool SET tool_code = ?, tool_name = ?, drawing_number = ?, spec_number = ?, minimum_quantity = ?, total_quantity = ?, storage_location = ?, status = ?, project_id = ? WHERE tool_id = ?";
 
@@ -274,6 +294,21 @@ public class ToolRepository {
                 ps.setInt(10, tool.getToolId());
                 ps.executeUpdate();
             }
+
+            if (existing != null) {
+                String changedBy = tool.getChangedBy();
+                saveChangeIfDifferent(con, tool.getToolId(), "tool_code", existing.getToolCode(), tool.getToolCode(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "tool_name", existing.getToolName(), tool.getToolName(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "drawing_number", existing.getDrawingNumber(), tool.getDrawingNumber(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "spec_number", existing.getSpecNumber(), tool.getSpecNumber(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "minimum_quantity", existing.getMinimumQuantity() == null ? null : existing.getMinimumQuantity().toString(), tool.getMinimumQuantity() == null ? null : tool.getMinimumQuantity().toString(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "total_quantity", existing.getTotalQuantity() == null ? null : existing.getTotalQuantity().toString(), tool.getTotalQuantity() == null ? null : tool.getTotalQuantity().toString(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "storage_location", existing.getStorageLocation(), tool.getStorageLocation(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "status", existing.getStatus(), tool.getStatus(), changedBy);
+                saveChangeIfDifferent(con, tool.getToolId(), "project_id", existing.getProjectId() == null ? null : existing.getProjectId().toString(), tool.getProjectId() == null ? null : tool.getProjectId().toString(), changedBy);
+            }
+
+            // STEP 2: Insert OR Update physical serials
 
             // STEP 2: Insert OR Update physical serials
             if (tool.getSerials() != null && !tool.getSerials().isEmpty()) {

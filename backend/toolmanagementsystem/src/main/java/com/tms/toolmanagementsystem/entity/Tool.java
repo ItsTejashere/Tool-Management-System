@@ -12,6 +12,7 @@ public class Tool {
     private String status;
     private Integer projectId;
     private List<String> serials;
+    private String changedBy;
 
     private Integer plantId;
     private String specNumber;
@@ -60,6 +61,9 @@ public class Tool {
 
     public List<String> getSerials() { return serials; }
     public void setSerials(List<String> serials) { this.serials = serials; }
+
+    public String getChangedBy() { return changedBy; }
+    public void setChangedBy(String changedBy) { this.changedBy = changedBy; }
 
     public Integer getAvailableQuantity() { return availableQuantity; }
     public void setAvailableQuantity(Integer availableQuantity) { this.availableQuantity = availableQuantity; }

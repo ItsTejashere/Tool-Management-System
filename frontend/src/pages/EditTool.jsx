@@ -74,6 +74,7 @@ export default function EditTool() {
     try {
       const payload = {
         ...formData,
+        changedBy: localStorage.getItem('username') || null,
         serials: serials // Send the new serials to Java!
       };
 
