@@ -38,10 +38,7 @@ export default function ToolDetails() {
   const [projects, setProjects] = useState([]);
   
   const [showHistory, setShowHistory] = useState(!isInventory);
-  const [showChangeHistory, setShowChangeHistory] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
-  const [changeHistory, setChangeHistory] = useState([]);
-  const [changeHistorySearch, setChangeHistorySearch] = useState('');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
 
   const handleDeleteHistoryRow = async (movementId) => {
@@ -104,14 +101,6 @@ export default function ToolDetails() {
     (record.movementType && record.movementType.toLowerCase().includes(historySearch.toLowerCase()))
   );
 
-  const displayChangeHistory = changeHistory.filter(record =>
-    changeHistorySearch === '' ||
-    (record.fieldName && record.fieldName.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
-    (record.oldValue && record.oldValue.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
-    (record.newValue && record.newValue.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
-    (record.changedBy && record.changedBy.toLowerCase().includes(changeHistorySearch.toLowerCase()))
-  );
-
   useEffect(() => {
     // 🚀 SECURITY FIX: Block unassigned non-OWNER users from accessing tool details
     if (userRole && userRole !== 'OWNER') {
@@ -153,11 +142,6 @@ export default function ToolDetails() {
         const historyRes = await axios.get(`${API_URL}/api/movements/tool/${id}`);
         setHistory(historyRes.data);
       } catch (error) { console.error("Failed to load history"); }
-
-      try {
-        const changeHistoryRes = await axios.get(`${API_URL}/api/tools/${id}/changes`);
-        setChangeHistory(changeHistoryRes.data);
-      } catch (error) { console.error("Failed to load tool change history"); }
 
       try {
         const toolRes = await axios.get(`${API_URL}/api/tools/${id}`);
@@ -497,9 +481,6 @@ export default function ToolDetails() {
             {showHistory ? 'Hide Movement History ↑' : 'View Movement History ↓'}
           </button>
         )}
-        <button className="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm" onClick={() => setShowChangeHistory(!showChangeHistory)}>
-          {showChangeHistory ? 'Hide Change History ↑' : 'View Change History ↓'}
-        </button>
       </div>
 
       {showHistory && (
@@ -598,52 +579,6 @@ export default function ToolDetails() {
         </div>
       )}
 
-      {showChangeHistory && (
-        <div className="card shadow-sm border-0 mx-auto mb-5" style={{ maxWidth: '900px' }}>
-          <div className="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-3">
-              <h5 className="mb-0 fw-bold">Tool Change History</h5>
-              <span className="badge bg-secondary">{displayChangeHistory.length} Records</span>
-            </div>
-            <input
-              type="text"
-              className="form-control form-control-sm border-0"
-              placeholder="🔍 Search field, old/new value, user..."
-              value={changeHistorySearch}
-              onChange={(e) => setChangeHistorySearch(e.target.value)}
-              style={{ width: '260px' }}
-            />
-          </div>
-          <div className="table-responsive">
-            <table className="table table-hover mb-0 align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>Date</th>
-                  <th>Field</th>
-                  <th>Old Value</th>
-                  <th>New Value</th>
-                  <th>Changed By</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayChangeHistory.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-4 text-muted">No change history found.</td></tr>
-                ) : (
-                  displayChangeHistory.map(record => (
-                    <tr key={record.historyId}>
-                      <td className="text-muted small">{new Date(record.changedAt).toLocaleString()}</td>
-                      <td className="fw-semibold text-dark small">{record.fieldName}</td>
-                      <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.oldValue || '-'}</td>
-                      <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.newValue || '-'}</td>
-                      <td className="small text-dark fw-semibold">{record.changedBy || '-'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

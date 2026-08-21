@@ -25,6 +25,8 @@ export default function EditTool() {
   // 🚀 NEW: State to handle dynamic serial numbers during edit/restock
   const [serials, setSerials] = useState([]);
   const [message, setMessage] = useState(null);
+  const [changeHistory, setChangeHistory] = useState([]);
+  const [changeHistorySearch, setChangeHistorySearch] = useState('');
 
   // FETCH existing tool details
   useEffect(() => {
@@ -32,12 +34,22 @@ export default function EditTool() {
       try {
         const response = await axios.get(`${API_URL}/api/tools/${id}`);
         setFormData(response.data);
+        const historyResponse = await axios.get(`${API_URL}/api/tools/${id}/changes`);
+        setChangeHistory(historyResponse.data);
       } catch (error) {
         setMessage({ type: 'danger', text: 'Error loading tool details.' });
       }
     };
     fetchToolDetails();
   }, [id]);
+
+  const displayChangeHistory = changeHistory.filter(record =>
+    changeHistorySearch === '' ||
+    (record.fieldName && record.fieldName.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
+    (record.oldValue && record.oldValue.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
+    (record.newValue && record.newValue.toLowerCase().includes(changeHistorySearch.toLowerCase())) ||
+    (record.changedBy && record.changedBy.toLowerCase().includes(changeHistorySearch.toLowerCase()))
+  );
 
   // Handle dynamic quantity changes for serial generation
   const handleQuantityChange = (e) => {
@@ -201,6 +213,51 @@ export default function EditTool() {
               Save Changes
             </button>
           </form>
+        </div>
+      </div>
+
+      <div className="card shadow-sm border-0 mx-auto mt-4" style={{ maxWidth: '900px' }}>
+        <div className="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <h5 className="mb-0 fw-bold">Tool Change History</h5>
+            <span className="badge bg-secondary">{displayChangeHistory.length} Records</span>
+          </div>
+          <input
+            type="text"
+            className="form-control form-control-sm border-0"
+            placeholder="Search field, old/new value, user..."
+            value={changeHistorySearch}
+            onChange={(e) => setChangeHistorySearch(e.target.value)}
+            style={{ width: '260px' }}
+          />
+        </div>
+        <div className="table-responsive">
+          <table className="table table-hover mb-0 align-middle">
+            <thead className="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Field</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Changed By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayChangeHistory.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-4 text-muted">No change history found.</td></tr>
+              ) : (
+                displayChangeHistory.map(record => (
+                  <tr key={record.historyId}>
+                    <td className="text-muted small">{new Date(record.changedAt).toLocaleString()}</td>
+                    <td className="fw-semibold text-dark small">{record.fieldName}</td>
+                    <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.oldValue || '-'}</td>
+                    <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.newValue || '-'}</td>
+                    <td className="small text-dark fw-semibold">{record.changedBy || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
