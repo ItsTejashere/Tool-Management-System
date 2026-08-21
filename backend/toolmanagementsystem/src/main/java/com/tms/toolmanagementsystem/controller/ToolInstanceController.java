@@ -69,4 +69,32 @@ public class ToolInstanceController {
         response.put("message", deleted > 0 ? "Physical tool deleted successfully" : "Physical tool not found");
         return deleted > 0 ? ResponseEntity.ok(response) : ResponseEntity.notFound().build();
     }
+
+    @Transactional
+    @DeleteMapping("/tool-instances/bulk")
+    public ResponseEntity<java.util.Map<String, Object>> deleteInstances(@RequestBody List<Integer> instanceIds) {
+        if (instanceIds == null || instanceIds.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        int deletedCount = 0;
+        for (Integer instanceId : instanceIds) {
+            List<Integer> toolIds = jdbcTemplate.query(
+                    "SELECT tool_id FROM tool_instance WHERE instance_id = ?",
+                    (rs, rowNum) -> rs.getInt("tool_id"), instanceId);
+            int deleted = jdbcTemplate.update("DELETE FROM tool_instance WHERE instance_id = ?", instanceId);
+            if (deleted > 0 && !toolIds.isEmpty()) {
+                jdbcTemplate.update(
+                        "UPDATE tool SET total_quantity = GREATEST(total_quantity - 1, 0) WHERE tool_id = ?",
+                        toolIds.get(0));
+                deletedCount++;
+            }
+        }
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", true);
+        response.put("deletedCount", deletedCount);
+        response.put("message", deletedCount + " physical tool(s) deleted successfully");
+        return ResponseEntity.ok(response);
+    }
 }

@@ -42,6 +42,7 @@ export default function ToolDetails() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
   const [toolInstances, setToolInstances] = useState([]);
   const [instanceSearch, setInstanceSearch] = useState('');
+  const [selectedInstanceIds, setSelectedInstanceIds] = useState([]);
 
   const handleDeleteHistoryRow = async (movementId) => {
     if (window.confirm("Are you sure you want to delete this log record?")) {
@@ -247,9 +248,35 @@ export default function ToolDetails() {
       setToolInstances((currentInstances) => currentInstances.filter(
         currentInstance => currentInstance.instanceId !== instance.instanceId
       ));
+      setSelectedInstanceIds((currentIds) => currentIds.filter(id => id !== instance.instanceId));
       setMessage({ type: 'success', text: `Serial ${instance.serialNumber} deleted successfully.` });
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to delete physical tool.' });
+    }
+  };
+
+  const filteredInstances = toolInstances.filter(instance =>
+    `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase())
+  );
+
+  const handleSelectAllInstances = (e) => {
+    setSelectedInstanceIds(e.target.checked
+      ? filteredInstances.map(instance => instance.instanceId)
+      : []);
+  };
+
+  const handleDeleteSelectedInstances = async () => {
+    if (!selectedInstanceIds.length || !window.confirm(`Delete ${selectedInstanceIds.length} selected physical tool(s)? Movement and change history will be kept.`)) return;
+
+    try {
+      await axios.delete(`${API_URL}/api/tool-instances/bulk`, { data: selectedInstanceIds });
+      setToolInstances((currentInstances) => currentInstances.filter(
+        instance => !selectedInstanceIds.includes(instance.instanceId)
+      ));
+      setSelectedInstanceIds([]);
+      setMessage({ type: 'success', text: 'Selected physical tools deleted successfully.' });
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to delete selected physical tools.' });
     }
   };
 
@@ -517,20 +544,45 @@ export default function ToolDetails() {
               value={instanceSearch}
               onChange={(e) => setInstanceSearch(e.target.value)}
             />
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <label className="form-check mb-0 fw-semibold">
+                <input
+                  type="checkbox"
+                  className="form-check-input me-2"
+                  checked={filteredInstances.length > 0 && selectedInstanceIds.length === filteredInstances.length}
+                  onChange={handleSelectAllInstances}
+                />
+                Select visible tools
+              </label>
+              {selectedInstanceIds.length > 0 && (
+                <button type="button" className="btn btn-sm btn-warning fw-bold" onClick={handleDeleteSelectedInstances}>
+                  Delete Selected ({selectedInstanceIds.length})
+                </button>
+              )}
+            </div>
             <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead>
                   <tr>
+                    <th>Select</th>
                     <th>Serial Number</th>
                     <th>Status</th>
                     <th className="text-end">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {toolInstances
-                    .filter(instance => `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase()))
-                    .map(instance => (
+                  {filteredInstances.map(instance => (
                       <tr key={instance.instanceId}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={selectedInstanceIds.includes(instance.instanceId)}
+                            onChange={() => setSelectedInstanceIds((currentIds) => currentIds.includes(instance.instanceId)
+                              ? currentIds.filter(id => id !== instance.instanceId)
+                              : [...currentIds, instance.instanceId])}
+                          />
+                        </td>
                         <td className="font-monospace fw-semibold">{instance.serialNumber}</td>
                         <td>
                           <span className={`badge ${instance.currentStatus === 'DAMAGED' ? 'bg-danger' : instance.currentStatus === 'AVAILABLE' ? 'bg-success' : 'bg-secondary'}`}>
@@ -544,8 +596,8 @@ export default function ToolDetails() {
                         </td>
                       </tr>
                     ))}
-                  {toolInstances.filter(instance => `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase())).length === 0 && (
-                    <tr><td colSpan="3" className="text-center text-muted py-3">No physical tools found.</td></tr>
+                  {filteredInstances.length === 0 && (
+                    <tr><td colSpan="4" className="text-center text-muted py-3">No physical tools found.</td></tr>
                   )}
                 </tbody>
               </table>
