@@ -25,6 +25,7 @@ export default function OwnerUserManagement() {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingFormData, setEditingFormData] = useState(null);
   const [editSelectedPlantId, setEditSelectedPlantId] = useState('');
+  const [editDepartments, setEditDepartments] = useState([]);
 
   useEffect(() => {
     if (userRole !== 'OWNER') {
@@ -69,6 +70,24 @@ export default function OwnerUserManagement() {
 
     fetchDepartments();
   }, [selectedPlantId]);
+
+  useEffect(() => {
+    if (!editSelectedPlantId) {
+      return;
+    }
+
+    const fetchEditDepartments = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/departments/${editSelectedPlantId}`);
+        setEditDepartments(res.data);
+      } catch (error) {
+        console.error('Failed to load departments for edit', error);
+        setEditDepartments([]);
+      }
+    };
+
+    fetchEditDepartments();
+  }, [editSelectedPlantId]);
 
   const refreshUsers = async () => {
     const res = await axios.get(`${API_URL}/api/users`);
@@ -134,15 +153,6 @@ export default function OwnerUserManagement() {
       email: user.email || ''
     });
     setEditSelectedPlantId(user.plantId || '');
-    
-    if (user.plantId) {
-      try {
-        const res = await axios.get(`${API_URL}/api/departments/${user.plantId}`);
-        setDepartments(res.data);
-      } catch (error) {
-        console.error('Failed to load departments for edit', error);
-      }
-    }
   };
 
   const handleUpdateUser = async (e) => {
@@ -173,6 +183,7 @@ export default function OwnerUserManagement() {
         setEditingUserId(null);
         setEditingFormData(null);
         setEditSelectedPlantId('');
+        setEditDepartments([]);
         refreshUsers();
       } else {
         setMessage({ type: 'danger', text: response.data.message || 'Failed to update user.' });
@@ -187,6 +198,7 @@ export default function OwnerUserManagement() {
     setEditingUserId(null);
     setEditingFormData(null);
     setEditSelectedPlantId('');
+    setEditDepartments([]);
   };
 
   return (
@@ -348,6 +360,7 @@ export default function OwnerUserManagement() {
                         value={editingFormData?.plantId || ''} 
                         onChange={(e) => { 
                           setEditSelectedPlantId(e.target.value); 
+                          setEditDepartments([]);
                           setEditingFormData({ ...editingFormData, plantId: e.target.value, deptId: '' }); 
                         }}
                       >
@@ -366,7 +379,7 @@ export default function OwnerUserManagement() {
                         disabled={!editSelectedPlantId}
                       >
                         <option value="">Select Department</option>
-                        {departments.map((dept) => (
+                        {editDepartments.map((dept) => (
                           <option key={dept.departmentId} value={dept.departmentId}>{dept.departmentName}</option>
                         ))}
                       </select>
