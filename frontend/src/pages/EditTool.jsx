@@ -51,6 +51,17 @@ export default function EditTool() {
     (record.changedBy && record.changedBy.toLowerCase().includes(changeHistorySearch.toLowerCase()))
   );
 
+  const handleDeleteChange = async (historyId) => {
+    if (!window.confirm('Are you sure you want to delete this change history record?')) return;
+
+    try {
+      await axios.delete(`${API_URL}/api/tools/changes/${historyId}`);
+      setChangeHistory((currentHistory) => currentHistory.filter(record => record.historyId !== historyId));
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to delete change history record.' });
+    }
+  };
+
   // Handle dynamic quantity changes for serial generation
   const handleQuantityChange = (e) => {
     let newQty = parseInt(e.target.value);
@@ -240,11 +251,12 @@ export default function EditTool() {
                 <th>Old Value</th>
                 <th>New Value</th>
                 <th>Changed By</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {displayChangeHistory.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4 text-muted">No change history found.</td></tr>
+                <tr><td colSpan={6} className="text-center py-4 text-muted">No change history found.</td></tr>
               ) : (
                 displayChangeHistory.map(record => (
                   <tr key={record.historyId}>
@@ -253,6 +265,15 @@ export default function EditTool() {
                     <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.oldValue || '-'}</td>
                     <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.newValue || '-'}</td>
                     <td className="small text-dark fw-semibold">{record.changedBy || '-'}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDeleteChange(record.historyId)}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
