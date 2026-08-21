@@ -51,4 +51,17 @@ public class UserController {
         response.put("message", success ? "User deleted successfully" : "Failed to delete user");
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Integer id, @RequestBody User user) {
+        // If password is provided and not empty, encode it
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        boolean success = userRepository.updateUser(id, user);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", success);
+        response.put("message", success ? "User updated successfully" : "Failed to update user");
+        return ResponseEntity.ok(response);
+    }
 }

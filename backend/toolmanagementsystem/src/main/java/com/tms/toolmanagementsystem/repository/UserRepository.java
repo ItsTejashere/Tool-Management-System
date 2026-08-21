@@ -144,4 +144,66 @@ public class UserRepository {
             return false;
         }
     }
+
+    public boolean updateUser(Integer userId, User user) {
+        String sql = "UPDATE users SET username = ?, password = ?, role = ?, plant_id = ?, dept_id = ?, email = ? WHERE id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, user.getUsername());
+            // Only update password if it was provided (non-empty)
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                ps.setString(2, user.getPassword());
+            } else {
+                // Query existing password and use it
+                User existingUser = findUserById(userId);
+                ps.setString(2, existingUser != null ? existingUser.getPassword() : "");
+            }
+            ps.setString(3, user.getRole());
+            if (user.getPlantId() != null) {
+                ps.setInt(4, user.getPlantId());
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
+            if (user.getDeptId() != null) {
+                ps.setInt(5, user.getDeptId());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
+            ps.setString(6, user.getEmail());
+            ps.setInt(7, userId);
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public User findUserById(Integer userId) {
+        String sql = "SELECT id, username, password, role, plant_id, dept_id, email FROM users WHERE id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setPassword(rs.getString("password"));
+                    user.setRole(rs.getString("role"));
+                    user.setPlantId((Integer) rs.getObject("plant_id"));
+                    user.setDeptId((Integer) rs.getObject("dept_id"));
+                    user.setEmail(rs.getString("email"));
+                    return user;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
