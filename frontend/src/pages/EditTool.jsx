@@ -27,6 +27,7 @@ export default function EditTool() {
   const [message, setMessage] = useState(null);
   const [changeHistory, setChangeHistory] = useState([]);
   const [changeHistorySearch, setChangeHistorySearch] = useState('');
+  const [selectedChangeHistoryIds, setSelectedChangeHistoryIds] = useState([]);
 
   // FETCH existing tool details
   useEffect(() => {
@@ -57,8 +58,49 @@ export default function EditTool() {
     try {
       await axios.delete(`${API_URL}/api/tools/changes/${historyId}`);
       setChangeHistory((currentHistory) => currentHistory.filter(record => record.historyId !== historyId));
+      setSelectedChangeHistoryIds((currentIds) => currentIds.filter(id => id !== historyId));
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to delete change history record.' });
+    }
+  };
+
+  const handleSelectChange = (historyId) => {
+    setSelectedChangeHistoryIds((currentIds) => currentIds.includes(historyId)
+      ? currentIds.filter(id => id !== historyId)
+      : [...currentIds, historyId]);
+  };
+
+  const handleSelectAllChanges = (e) => {
+    setSelectedChangeHistoryIds(e.target.checked
+      ? displayChangeHistory.map(record => record.historyId)
+      : []);
+  };
+
+  const handleDeleteSelectedChanges = async () => {
+    if (!selectedChangeHistoryIds.length || !window.confirm(`Delete ${selectedChangeHistoryIds.length} selected change history record(s)?`)) return;
+
+    try {
+      await Promise.all(selectedChangeHistoryIds.map((historyId) =>
+        axios.delete(`${API_URL}/api/tools/changes/${historyId}`)
+      ));
+      setChangeHistory((currentHistory) => currentHistory.filter(
+        record => !selectedChangeHistoryIds.includes(record.historyId)
+      ));
+      setSelectedChangeHistoryIds([]);
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to delete selected change history records.' });
+    }
+  };
+
+  const handleClearAllChanges = async () => {
+    if (!changeHistory.length || !window.confirm('Delete all change history records for this tool?')) return;
+
+    try {
+      await axios.delete(`${API_URL}/api/tools/changes/tool/${id}/clear`);
+      setChangeHistory([]);
+      setSelectedChangeHistoryIds([]);
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to clear change history.' });
     }
   };
 
@@ -233,19 +275,39 @@ export default function EditTool() {
             <h5 className="mb-0 fw-bold">Tool Change History</h5>
             <span className="badge bg-secondary">{displayChangeHistory.length} Records</span>
           </div>
-          <input
-            type="text"
-            className="form-control form-control-sm border-0"
-            placeholder="Search field, old/new value, user..."
-            value={changeHistorySearch}
-            onChange={(e) => setChangeHistorySearch(e.target.value)}
-            style={{ width: '260px' }}
-          />
+          <div className="d-flex align-items-center gap-2">
+            <input
+              type="text"
+              className="form-control form-control-sm border-0"
+              placeholder="Search field, old/new value, user..."
+              value={changeHistorySearch}
+              onChange={(e) => setChangeHistorySearch(e.target.value)}
+              style={{ width: '260px' }}
+            />
+            {selectedChangeHistoryIds.length > 0 && (
+              <button type="button" className="btn btn-warning btn-sm fw-bold" onClick={handleDeleteSelectedChanges}>
+                Delete Selected ({selectedChangeHistoryIds.length})
+              </button>
+            )}
+            {changeHistory.length > 0 && (
+              <button type="button" className="btn btn-danger btn-sm fw-bold" onClick={handleClearAllChanges}>
+                Clear All
+              </button>
+            )}
+          </div>
         </div>
         <div className="table-responsive">
           <table className="table table-hover mb-0 align-middle">
             <thead className="table-light">
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={displayChangeHistory.length > 0 && selectedChangeHistoryIds.length === displayChangeHistory.length}
+                    onChange={handleSelectAllChanges}
+                  />
+                </th>
                 <th>Date</th>
                 <th>Field</th>
                 <th>Old Value</th>
@@ -256,10 +318,18 @@ export default function EditTool() {
             </thead>
             <tbody>
               {displayChangeHistory.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-4 text-muted">No change history found.</td></tr>
+                <tr><td colSpan={7} className="text-center py-4 text-muted">No change history found.</td></tr>
               ) : (
                 displayChangeHistory.map(record => (
                   <tr key={record.historyId}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={selectedChangeHistoryIds.includes(record.historyId)}
+                        onChange={() => handleSelectChange(record.historyId)}
+                      />
+                    </td>
                     <td className="text-muted small">{new Date(record.changedAt).toLocaleString()}</td>
                     <td className="fw-semibold text-dark small">{record.fieldName}</td>
                     <td className="small text-secondary" style={{ maxWidth: '220px' }}>{record.oldValue || '-'}</td>

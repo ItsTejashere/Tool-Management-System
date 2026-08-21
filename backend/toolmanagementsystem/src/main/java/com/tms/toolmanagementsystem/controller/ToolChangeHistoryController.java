@@ -31,4 +31,14 @@ public class ToolChangeHistoryController {
         response.put("message", success ? "Change history deleted successfully" : "Change history record not found");
         return success ? ResponseEntity.ok(response) : ResponseEntity.notFound().build();
     }
+
+    @DeleteMapping("/changes/tool/{toolId}/clear")
+    public ResponseEntity<Map<String, Object>> clearToolChangeHistory(@PathVariable Integer toolId) {
+        int deletedCount = historyRepository.deleteByToolId(toolId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", true);
+        response.put("deletedCount", deletedCount);
+        response.put("message", deletedCount + " change history record(s) deleted");
+        return ResponseEntity.ok(response);
+    }
 }

@@ -68,4 +68,17 @@ public class ToolChangeHistoryRepository {
             return false;
         }
     }
+
+    public int deleteByToolId(Integer toolId) {
+        String sql = "DELETE FROM tool_change_history WHERE tool_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, toolId);
+            return ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
 }
