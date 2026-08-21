@@ -42,6 +42,7 @@ export default function ToolDetails() {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
   const [toolInstances, setToolInstances] = useState([]);
   const [instanceSearch, setInstanceSearch] = useState('');
+  const [instanceStatusFilter, setInstanceStatusFilter] = useState('ALL');
   const [selectedInstanceIds, setSelectedInstanceIds] = useState([]);
   const [showInstanceManager, setShowInstanceManager] = useState(false);
   const [instancesLoading, setInstancesLoading] = useState(false);
@@ -268,9 +269,12 @@ export default function ToolDetails() {
     }
   };
 
-  const filteredInstances = toolInstances.filter(instance =>
-    `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase())
-  );
+  const filteredInstances = toolInstances.filter(instance => {
+    const matchesSearch = `${instance.serialNumber} ${instance.currentStatus}`
+      .toLowerCase().includes(instanceSearch.toLowerCase());
+    const matchesStatus = instanceStatusFilter === 'ALL' || instance.currentStatus === instanceStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleSelectAllInstances = (e) => {
     setSelectedInstanceIds(e.target.checked
@@ -570,28 +574,53 @@ export default function ToolDetails() {
                 <p className="text-muted mb-0 mt-2">Loading serials...</p>
               </div>
             ) : (<>
-              <input
-                type="text"
-                className="form-control mb-3"
-                placeholder="Search by serial number or status..."
-                value={instanceSearch}
-                onChange={(e) => setInstanceSearch(e.target.value)}
-              />
+              <div className="row g-2 mb-3">
+                <div className="col-md-8">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Find a serial number..."
+                    value={instanceSearch}
+                    onChange={(e) => setInstanceSearch(e.target.value)}
+                  />
+                </div>
+                <div className="col-md-4">
+                  <select
+                    className="form-select"
+                    value={instanceStatusFilter}
+                    onChange={(e) => setInstanceStatusFilter(e.target.value)}
+                  >
+                    <option value="ALL">All statuses</option>
+                    <option value="AVAILABLE">Available</option>
+                    <option value="IN_USE">In use</option>
+                    <option value="SHARPENING">Sharpening</option>
+                    <option value="DAMAGED">Damaged</option>
+                  </select>
+                </div>
+              </div>
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <label className="form-check mb-0 fw-semibold">
+                <label className="form-check mb-0 fw-semibold text-secondary">
                   <input
                     type="checkbox"
                     className="form-check-input me-2"
                     checked={filteredInstances.length > 0 && selectedInstanceIds.length === filteredInstances.length}
                     onChange={handleSelectAllInstances}
                   />
-                  Select visible tools
+                  Select visible ({filteredInstances.length})
                 </label>
-                {selectedInstanceIds.length > 0 && (
-                  <button type="button" className="btn btn-sm btn-warning fw-bold" onClick={handleDeleteSelectedInstances}>
-                    Delete Selected ({selectedInstanceIds.length})
-                  </button>
-                )}
+                <div className="d-flex gap-2 align-items-center">
+                  {selectedInstanceIds.length > 0 && (
+                    <>
+                      <span className="small text-muted">{selectedInstanceIds.length} selected</span>
+                      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setSelectedInstanceIds([])}>
+                        Clear selection
+                      </button>
+                      <button type="button" className="btn btn-sm btn-danger fw-bold" onClick={handleDeleteSelectedInstances}>
+                        Delete selected
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
