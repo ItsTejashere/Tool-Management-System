@@ -68,8 +68,9 @@ export default function Login() {
           localStorage.setItem('assignedDeptId', response.data.deptId);
         }
         
-        // 🚀 Everyone goes to the Plant Selection screen first
-        setTimeout(() => navigate('/plant-selection'), 1000);
+        // 🚀 Route based on role: OWNER goes to menu, others to plant selection
+        const nextRoute = response.data.role === 'OWNER' ? '/owner-menu' : '/plant-selection';
+        setTimeout(() => navigate(nextRoute), 1000);
         
       } else {
         setMessage('Error: Invalid Credentials');

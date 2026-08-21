@@ -129,7 +129,7 @@ export default function OwnerUserManagement() {
             <p className="text-muted">Create, manage, and remove users with plant and department assignment.</p>
           </div>
           <div>
-            <button className="btn btn-outline-secondary me-2" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+            <button className="btn btn-outline-secondary me-2" onClick={() => navigate('/owner-menu')}>← Back to Menu</button>
             <button className="btn btn-danger" onClick={() => { localStorage.clear(); navigate('/login'); }}>Logout</button>
           </div>
         </div>

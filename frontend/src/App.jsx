@@ -8,6 +8,7 @@ import ProjectSelection from './pages/ProjectSelection';
 import PlantSelection from './pages/PlantSelection';
 import DepartmentSelection from './pages/DepartmentSelection';
 import OwnerUserManagement from './pages/OwnerUserManagement';
+import OwnerMenu from './pages/OwnerMenu';
 
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/owner-menu" element={<OwnerMenu />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/add-tool" element={<AddTool />} />
         <Route path="/tool/:id" element={<ToolDetails />} />

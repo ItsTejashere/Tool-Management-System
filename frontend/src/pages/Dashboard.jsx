@@ -130,9 +130,14 @@ export default function Dashboard() {
             Role: {userRole || 'VIEWER'}
           </span>
           {userRole === 'OWNER' && (
-            <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-users')}>
-              Manage Users
-            </button>
+            <>
+              <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-menu')}>
+                ← Back to Menu
+              </button>
+              <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-users')}>
+                Manage Users
+              </button>
+            </>
           )}
           <button className="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onClick={handleChangeProject}>
             Change Project
