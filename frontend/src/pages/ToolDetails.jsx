@@ -43,6 +43,8 @@ export default function ToolDetails() {
   const [toolInstances, setToolInstances] = useState([]);
   const [instanceSearch, setInstanceSearch] = useState('');
   const [selectedInstanceIds, setSelectedInstanceIds] = useState([]);
+  const [showInstanceManager, setShowInstanceManager] = useState(false);
+  const [instancesLoading, setInstancesLoading] = useState(false);
 
   const handleDeleteHistoryRow = async (movementId) => {
     if (window.confirm("Are you sure you want to delete this log record?")) {
@@ -155,14 +157,6 @@ export default function ToolDetails() {
         setToolLoading(false);
       }
 
-      if (userRole === 'INVENTORY' || userRole === 'OWNER') {
-        try {
-          const instancesRes = await axios.get(`${API_URL}/api/tool-instances/${id}`);
-          setToolInstances(instancesRes.data);
-        } catch (error) {
-          console.error("Failed to load physical tool instances", error);
-        }
-      }
     };
     
     fetchMasterData();
@@ -249,9 +243,28 @@ export default function ToolDetails() {
         currentInstance => currentInstance.instanceId !== instance.instanceId
       ));
       setSelectedInstanceIds((currentIds) => currentIds.filter(id => id !== instance.instanceId));
+      sessionStorage.removeItem('dashboard_tools');
       setMessage({ type: 'success', text: `Serial ${instance.serialNumber} deleted successfully.` });
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to delete physical tool.' });
+    }
+  };
+
+  const handleToggleInstanceManager = async () => {
+    if (showInstanceManager) {
+      setShowInstanceManager(false);
+      return;
+    }
+
+    setShowInstanceManager(true);
+    setInstancesLoading(true);
+    try {
+      const instancesRes = await axios.get(`${API_URL}/api/tool-instances/${id}`);
+      setToolInstances(instancesRes.data);
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to load physical tools.' });
+    } finally {
+      setInstancesLoading(false);
     }
   };
 
@@ -274,6 +287,7 @@ export default function ToolDetails() {
         instance => !selectedInstanceIds.includes(instance.instanceId)
       ));
       setSelectedInstanceIds([]);
+      sessionStorage.removeItem('dashboard_tools');
       setMessage({ type: 'success', text: 'Selected physical tools deleted successfully.' });
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to delete selected physical tools.' });
@@ -527,40 +541,59 @@ export default function ToolDetails() {
         </div>
       )}
 
-      {(userRole === 'INVENTORY' || userRole === 'OWNER') && (
+      {(userRole === 'INVENTORY' || userRole === 'OWNER') && !showInstanceManager && (
+        <div className="text-center mt-4">
+          <button type="button" className="btn btn-outline-primary fw-bold rounded-pill px-4" onClick={handleToggleInstanceManager}>
+            Manage Serial Tools
+          </button>
+        </div>
+      )}
+
+      {(userRole === 'INVENTORY' || userRole === 'OWNER') && showInstanceManager && (
         <div className="card shadow-sm border-0 mx-auto mt-4" style={{ maxWidth: '900px' }}>
           <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center gap-3">
             <div>
               <h5 className="mb-1 fw-bold">Manage Physical Tools</h5>
               <span className="small text-white-50">Delete a serial without deleting movement or change history</span>
             </div>
-            <span className="badge bg-secondary">{toolInstances.length} Serials</span>
+            <div className="d-flex align-items-center gap-2">
+              <span className="badge bg-secondary">{toolInstances.length} Serials</span>
+              <button type="button" className="btn btn-sm btn-outline-light" onClick={handleToggleInstanceManager}>
+                Hide
+              </button>
+            </div>
           </div>
           <div className="card-body">
-            <input
-              type="text"
-              className="form-control mb-3"
-              placeholder="Search by serial number or status..."
-              value={instanceSearch}
-              onChange={(e) => setInstanceSearch(e.target.value)}
-            />
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <label className="form-check mb-0 fw-semibold">
-                <input
-                  type="checkbox"
-                  className="form-check-input me-2"
-                  checked={filteredInstances.length > 0 && selectedInstanceIds.length === filteredInstances.length}
-                  onChange={handleSelectAllInstances}
-                />
-                Select visible tools
-              </label>
-              {selectedInstanceIds.length > 0 && (
-                <button type="button" className="btn btn-sm btn-warning fw-bold" onClick={handleDeleteSelectedInstances}>
-                  Delete Selected ({selectedInstanceIds.length})
-                </button>
-              )}
-            </div>
-            <div className="table-responsive">
+            {instancesLoading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-primary" role="status"></div>
+                <p className="text-muted mb-0 mt-2">Loading serials...</p>
+              </div>
+            ) : (<>
+              <input
+                type="text"
+                className="form-control mb-3"
+                placeholder="Search by serial number or status..."
+                value={instanceSearch}
+                onChange={(e) => setInstanceSearch(e.target.value)}
+              />
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <label className="form-check mb-0 fw-semibold">
+                  <input
+                    type="checkbox"
+                    className="form-check-input me-2"
+                    checked={filteredInstances.length > 0 && selectedInstanceIds.length === filteredInstances.length}
+                    onChange={handleSelectAllInstances}
+                  />
+                  Select visible tools
+                </label>
+                {selectedInstanceIds.length > 0 && (
+                  <button type="button" className="btn btn-sm btn-warning fw-bold" onClick={handleDeleteSelectedInstances}>
+                    Delete Selected ({selectedInstanceIds.length})
+                  </button>
+                )}
+              </div>
+              <div className="table-responsive">
               <table className="table table-hover align-middle mb-0">
                 <thead>
                   <tr>
@@ -601,7 +634,8 @@ export default function ToolDetails() {
                   )}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>)}
           </div>
         </div>
       )}
