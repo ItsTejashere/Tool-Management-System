@@ -4,6 +4,7 @@ import com.tms.toolmanagementsystem.entity.ToolInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,5 +36,37 @@ public class ToolInstanceController {
         }, toolId, status);
 
         return ResponseEntity.ok(instances);
+    }
+
+    @GetMapping("/tool-instances/{toolId}")
+    public ResponseEntity<List<ToolInstance>> getInstances(@PathVariable Integer toolId) {
+        String sql = "SELECT * FROM tool_instance WHERE tool_id = ? ORDER BY serial_number";
+        List<ToolInstance> instances = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            ToolInstance ti = new ToolInstance();
+            ti.setInstanceId(rs.getInt("instance_id"));
+            ti.setToolId(rs.getInt("tool_id"));
+            ti.setSerialNumber(rs.getString("serial_number"));
+            ti.setCurrentStatus(rs.getString("current_status"));
+            return ti;
+        }, toolId);
+        return ResponseEntity.ok(instances);
+    }
+
+    @Transactional
+    @DeleteMapping("/tool-instances/{instanceId}")
+    public ResponseEntity<java.util.Map<String, Object>> deleteInstance(@PathVariable Integer instanceId) {
+        List<Integer> toolIds = jdbcTemplate.query(
+                "SELECT tool_id FROM tool_instance WHERE instance_id = ?",
+                (rs, rowNum) -> rs.getInt("tool_id"), instanceId);
+        int deleted = jdbcTemplate.update("DELETE FROM tool_instance WHERE instance_id = ?", instanceId);
+        if (deleted > 0 && !toolIds.isEmpty()) {
+            jdbcTemplate.update(
+                    "UPDATE tool SET total_quantity = GREATEST(total_quantity - 1, 0) WHERE tool_id = ?",
+                    toolIds.get(0));
+        }
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", deleted > 0);
+        response.put("message", deleted > 0 ? "Physical tool deleted successfully" : "Physical tool not found");
+        return deleted > 0 ? ResponseEntity.ok(response) : ResponseEntity.notFound().build();
     }
 }

@@ -40,6 +40,8 @@ export default function ToolDetails() {
   const [showHistory, setShowHistory] = useState(!isInventory);
   const [historySearch, setHistorySearch] = useState('');
   const [selectedHistoryIds, setSelectedHistoryIds] = useState([]);
+  const [toolInstances, setToolInstances] = useState([]);
+  const [instanceSearch, setInstanceSearch] = useState('');
 
   const handleDeleteHistoryRow = async (movementId) => {
     if (window.confirm("Are you sure you want to delete this log record?")) {
@@ -151,6 +153,15 @@ export default function ToolDetails() {
       } finally {
         setToolLoading(false);
       }
+
+      if (userRole === 'INVENTORY' || userRole === 'OWNER') {
+        try {
+          const instancesRes = await axios.get(`${API_URL}/api/tool-instances/${id}`);
+          setToolInstances(instancesRes.data);
+        } catch (error) {
+          console.error("Failed to load physical tool instances", error);
+        }
+      }
     };
     
     fetchMasterData();
@@ -225,6 +236,20 @@ export default function ToolDetails() {
       }
     } catch (error) {
       setMessage({ type: 'danger', text: 'Failed to record movement.' });
+    }
+  };
+
+  const handleDeleteInstance = async (instance) => {
+    if (!window.confirm(`Delete physical tool with serial ${instance.serialNumber}? Movement history will be kept.`)) return;
+
+    try {
+      await axios.delete(`${API_URL}/api/tool-instances/${instance.instanceId}`);
+      setToolInstances((currentInstances) => currentInstances.filter(
+        currentInstance => currentInstance.instanceId !== instance.instanceId
+      ));
+      setMessage({ type: 'success', text: `Serial ${instance.serialNumber} deleted successfully.` });
+    } catch (error) {
+      setMessage({ type: 'danger', text: 'Failed to delete physical tool.' });
     }
   };
 
@@ -471,6 +496,60 @@ export default function ToolDetails() {
                 Confirm Transaction
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {(userRole === 'INVENTORY' || userRole === 'OWNER') && (
+        <div className="card shadow-sm border-0 mx-auto mt-4" style={{ maxWidth: '900px' }}>
+          <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center gap-3">
+            <div>
+              <h5 className="mb-1 fw-bold">Manage Physical Tools</h5>
+              <span className="small text-white-50">Delete a serial without deleting movement or change history</span>
+            </div>
+            <span className="badge bg-secondary">{toolInstances.length} Serials</span>
+          </div>
+          <div className="card-body">
+            <input
+              type="text"
+              className="form-control mb-3"
+              placeholder="Search by serial number or status..."
+              value={instanceSearch}
+              onChange={(e) => setInstanceSearch(e.target.value)}
+            />
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Serial Number</th>
+                    <th>Status</th>
+                    <th className="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {toolInstances
+                    .filter(instance => `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase()))
+                    .map(instance => (
+                      <tr key={instance.instanceId}>
+                        <td className="font-monospace fw-semibold">{instance.serialNumber}</td>
+                        <td>
+                          <span className={`badge ${instance.currentStatus === 'DAMAGED' ? 'bg-danger' : instance.currentStatus === 'AVAILABLE' ? 'bg-success' : 'bg-secondary'}`}>
+                            {instance.currentStatus}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteInstance(instance)}>
+                            Delete Serial
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {toolInstances.filter(instance => `${instance.serialNumber} ${instance.currentStatus}`.toLowerCase().includes(instanceSearch.toLowerCase())).length === 0 && (
+                    <tr><td colSpan="3" className="text-center text-muted py-3">No physical tools found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
