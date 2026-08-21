@@ -272,6 +272,92 @@ button {
   }
 }
 
+.dashboard-shell {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  gap: 1rem;
+}
+
+.dashboard-header-text {
+  min-width: 0;
+}
+
+.dashboard-header-text h2 {
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  line-height: 1.2;
+}
+
+.dashboard-header-actions {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.dashboard-toolbar {
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-toolbar-title {
+  min-width: 0;
+}
+
+.dashboard-toolbar-actions {
+  flex: 1 1 320px;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+}
+
+.dashboard-toolbar-actions .form-control {
+  width: min(100%, 320px);
+  min-width: 180px;
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-table-wrap table {
+  min-width: 760px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-header-actions {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .dashboard-toolbar {
+    align-items: stretch;
+  }
+
+  .dashboard-toolbar-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .dashboard-toolbar-actions .form-control,
+  .dashboard-toolbar-actions .btn {
+    width: 100%;
+  }
+
+  .chart-card,
+  .card {
+    border-radius: 1rem !important;
+  }
+}
+
 /* Application-wide visual system */
 :root {
   --bg: #f4f1eb;

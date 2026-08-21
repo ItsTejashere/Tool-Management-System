@@ -115,17 +115,16 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="container-fluid bg-light min-vh-100 py-4">
-      
-      <div className="d-flex justify-content-between align-items-center mb-4 px-3">
-        <div>
-          <h2 className="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+    <div className="dashboard-shell container-fluid bg-light min-vh-100 py-3 py-md-4">
+      <div className="dashboard-header d-flex justify-content-between align-items-start mb-4 px-2 px-md-3">
+        <div className="dashboard-header-text">
+          <h2 className="fw-bold text-primary mb-0 d-flex align-items-center flex-wrap gap-2">
             {activeProjectName} {isInventory ? 'Inventory' : 'Catalog'}
             {isSyncing && <div className="spinner-grow spinner-grow-sm text-secondary" role="status" title="Syncing real-time data..."></div>}
           </h2>
           <span className="text-muted small">TMS Dashboard</span>
         </div>
-        <div className="d-flex align-items-center gap-3">
+        <div className="dashboard-header-actions d-flex align-items-center flex-wrap gap-2 gap-md-3">
           <span className={`fw-semibold border px-3 py-1 rounded-pill ${canManage ? 'text-secondary border-secondary' : 'text-info border-info'}`}>
             Role: {userRole || 'VIEWER'}
           </span>
@@ -148,7 +147,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="row px-3 mb-4">
+      <div className="row g-3 px-2 px-md-3 mb-4">
         {[
           { title: 'Total Tool Types', value: totalTools, color: 'primary', filterKey: 'ALL' },
           { title: 'Total Available Stock', value: totalAvailableStock, color: 'success', filterKey: 'AVAILABLE' },
@@ -160,13 +159,13 @@ export default function Dashboard() {
           const isActive = activeFilter === metric.filterKey;
           
           return (
-            <div key={index} className="col" onClick={() => setActiveFilter(metric.filterKey)}>
+            <div key={index} className="col-12 col-sm-6 col-lg-4 col-xl" onClick={() => setActiveFilter(metric.filterKey)}>
               <div 
-                className={`card border-0 shadow-sm border-start border-${metric.color} border-4 h-100`}
+                className={`dashboard-metric-card card border-0 shadow-sm border-start border-${metric.color} border-4 h-100`}
                 style={{ 
                   cursor: 'pointer', 
                   transition: 'all 0.2s ease-in-out',
-                  transform: isActive ? 'scale(1.03)' : 'scale(1)',
+                  transform: isActive ? 'scale(1.01)' : 'scale(1)',
                   backgroundColor: isActive ? '#f8f9fa' : 'white',
                   boxShadow: isActive ? '0 0.5rem 1rem rgba(0,0,0,0.15)' : ''
                 }}
@@ -181,9 +180,9 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="card shadow-sm border-0 mx-3 rounded-3 overflow-hidden">
-        <div className="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
-          <h5 className="mb-0 fw-bold text-dark">
+      <div className="card shadow-sm border-0 mx-2 mx-md-3 rounded-3 overflow-hidden">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0 dashboard-toolbar">
+          <h5 className="mb-0 fw-bold text-dark dashboard-toolbar-title">
             {isInventory ? 'Tool Inventory' : 'Available Tools'}
             {activeFilter !== 'ALL' && (
                <span className="badge bg-secondary ms-3 align-middle" style={{fontSize: '0.75rem'}}>
@@ -197,14 +196,13 @@ export default function Dashboard() {
                </span>
             )}
           </h5>
-          <div className="d-flex gap-3">
+          <div className="dashboard-toolbar-actions d-flex gap-2 gap-md-3">
             <input 
               type="text" 
               className="form-control bg-light border-0" 
-              placeholder="Search by code, name, drawing no.,loction or spec no..." 
+              placeholder="Search by code, name, drawing no., location or spec no..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '320px' }}
             />
             {canManage && (
               <button 
@@ -217,7 +215,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="table-responsive">
+        <div className="dashboard-table-wrap table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light text-secondary" style={{ fontSize: '0.9rem' }}>
               <tr>
