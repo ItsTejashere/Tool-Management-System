@@ -84,7 +84,8 @@ export default function Dashboard() {
     const matchesSearch = (tool.toolCode || '').toString().toLowerCase().includes(lowerSearch) ||
                           (tool.toolName || '').toString().toLowerCase().includes(lowerSearch) ||
                           (tool.drawingNumber || '').toString().toLowerCase().includes(lowerSearch) ||
-                          (tool.specNumber || '').toString().toLowerCase().includes(lowerSearch);
+                          (tool.specNumber || '').toString().toLowerCase().includes(lowerSearch)||
+                          (tool.storageLocation || '').toString().toLowerCase().includes(lowerSearch);
     
     if (!matchesSearch) return false;
 
@@ -115,14 +116,9 @@ export default function Dashboard() {
             Role: {userRole || 'VIEWER'}
           </span>
           {userRole === 'OWNER' && (
-            <>
-              <button className="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold me-2" onClick={() => navigate('/plant-selection')}>
-                Select Facility
-              </button>
-              <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-users')}>
-                Manage Users
-              </button>
-            </>
+            <button className="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onClick={() => navigate('/owner-users')}>
+              Manage Users
+            </button>
           )}
           <button className="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-bold" onClick={handleChangeProject}>
             Change Project
@@ -186,7 +182,7 @@ export default function Dashboard() {
             <input 
               type="text" 
               className="form-control bg-light border-0" 
-              placeholder="Search by code, name, drawing no., or spec no..." 
+              placeholder="Search by code, name, drawing no.,loction or spec no..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ width: '320px' }}
