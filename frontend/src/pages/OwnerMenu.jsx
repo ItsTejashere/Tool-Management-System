@@ -31,7 +31,7 @@ export default function OwnerMenu() {
   };
 
   return (
-    <div className="container-fluid bg-gradient d-flex align-items-center justify-content-center vh-100" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div className="container-fluid owner-menu-page d-flex align-items-center justify-content-center vh-100">
       <div className="text-center">
         <div className="mb-5">
           <h1 className="fw-bold text-white mb-2">Welcome, Admin</h1>
