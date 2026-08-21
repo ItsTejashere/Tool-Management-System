@@ -70,6 +70,14 @@ export default function PlantSelection() {
     navigate('/login');
   };
 
+  const handleBackToMenu = () => {
+    localStorage.removeItem('activePlantId');
+    localStorage.removeItem('activeDeptId');
+    localStorage.removeItem('activeProjectId');
+    localStorage.removeItem('activeProjectName');
+    navigate('/owner-menu');
+  };
+
   return (
     <div className="container-fluid bg-light min-vh-100 py-5 d-flex flex-column align-items-center">
       <div className="w-100" style={{ maxWidth: '900px' }}>
@@ -77,9 +85,16 @@ export default function PlantSelection() {
           <div>
             <h2 className="fw-bold text-primary mb-1">Select Facility</h2>
           </div>
-          <button className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" onClick={handleLogout}>
-            Logout
-          </button>
+          <div className="d-flex gap-2">
+            {userRole === 'OWNER' && (
+              <button className="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold" onClick={handleBackToMenu}>
+                Back to Menu
+              </button>
+            )}
+            <button className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" onClick={handleLogout}>
+              Logout
+            </button>
+          </div>
         </div>
 
         {/* 🚀 Access Denied Error Banner */}
