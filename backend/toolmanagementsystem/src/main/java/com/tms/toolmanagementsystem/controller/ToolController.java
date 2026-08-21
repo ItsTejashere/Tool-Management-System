@@ -65,8 +65,12 @@ public class ToolController {
     // 🚀 EVICT: Wipe the "tools" cache because a tool's details were changed!
     @CacheEvict(value = "tools", allEntries = true)
     @PutMapping("/{id}")
-    public ResponseEntity<java.util.Map<String, Object>> updateTool(@PathVariable Integer id, @RequestBody Tool tool) {
+    public ResponseEntity<java.util.Map<String, Object>> updateTool(
+            @PathVariable Integer id,
+            @RequestBody Tool tool,
+            jakarta.servlet.http.HttpServletRequest request) {
         tool.setToolId(id);
+        tool.setChangedBy((String) request.getAttribute("username"));
         boolean success = toolRepository.updateTool(tool);
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();

@@ -59,6 +59,7 @@ export default function Login() {
         // Save user role
         const role = response.data.role;
         localStorage.setItem('userRole', role);
+        localStorage.setItem('username', username);
 
         // 🚀 Save assigned IDs so the next screens can filter the lists!
         if (response.data.plantId != null) {
