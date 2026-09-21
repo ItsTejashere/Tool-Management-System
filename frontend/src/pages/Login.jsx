@@ -11,6 +11,9 @@ export default function Login() {
   const [currentStep, setCurrentStep] = useState('LOGIN'); 
   const [message, setMessage] = useState(() => {
     const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason) {
+      window.history.replaceState({}, document.title, '/login');
+    }
     if (reason === 'session-conflict') {
       return 'Session expired or this account was logged in on another device. Please log in again.';
     }

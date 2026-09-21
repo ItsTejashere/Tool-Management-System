@@ -25,14 +25,16 @@ const redirectToLogin = (reason) => {
 
 if (sessionChannel) {
   sessionChannel.addEventListener('message', (event) => {
-    if (event.data?.type === 'session-replaced' && localStorage.getItem('token')) {
+    if (window.location.pathname !== '/login'
+      && event.data?.type === 'session-replaced'
+      && localStorage.getItem('token')) {
       redirectToLogin('session-conflict');
     }
   });
 }
 
 window.setInterval(() => {
-  if (localStorage.getItem('token')) {
+  if (window.location.pathname !== '/login' && localStorage.getItem('token')) {
     axios.get(`${API_URL}/api/session/validate`).catch(() => {});
   }
 }, 5000);
@@ -44,12 +46,13 @@ axios.interceptors.response.use(
     const responseMessage = error.response?.data?.message || '';
     const requestUrl = error.config?.url || '';
     const isAuthRequest = requestUrl.includes('/api/auth/');
+    const isLoginPage = window.location.pathname === '/login';
     const isSessionFailure = status === 401 && (
       responseMessage.includes('logged in on another device')
       || (!isAuthRequest && responseMessage.includes('Invalid or expired token'))
     );
 
-    if (isSessionFailure) {
+    if (isSessionFailure && !isLoginPage) {
       const reason = responseMessage.includes('logged in on another device')
         ? 'session-conflict'
         : 'session-expired';
