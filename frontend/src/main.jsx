@@ -14,9 +14,27 @@ if (savedToken) {
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && error.response?.data?.message?.includes('logged in on another device')) {
+    const status = error.response?.status;
+    const responseMessage = error.response?.data?.message || '';
+    const requestUrl = error.config?.url || '';
+    const isAuthRequest = requestUrl.includes('/api/auth/');
+    const isSessionFailure = status === 401 && (
+      responseMessage.includes('logged in on another device')
+      || (!isAuthRequest && responseMessage.includes('Invalid or expired token'))
+    );
+
+    if (isSessionFailure) {
+      sessionStorage.setItem(
+        'authMessage',
+        responseMessage.includes('logged in on another device')
+          ? 'Session expired or this account was logged in on another device. Please log in again.'
+          : 'Session expired. Please log in again.'
+      );
       localStorage.clear();
       sessionStorage.clear();
+      sessionStorage.setItem('authMessage', responseMessage.includes('logged in on another device')
+        ? 'Session expired or this account was logged in on another device. Please log in again.'
+        : 'Session expired. Please log in again.');
       delete axios.defaults.headers.common['Authorization'];
       window.location.href = '/login';
     }

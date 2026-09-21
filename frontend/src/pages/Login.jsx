@@ -9,7 +9,11 @@ export default function Login() {
   
   // --- UI STATE MACHINE ---
   const [currentStep, setCurrentStep] = useState('LOGIN'); 
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(() => {
+    const authMessage = sessionStorage.getItem('authMessage');
+    sessionStorage.removeItem('authMessage');
+    return authMessage || '';
+  });
 
   // --- LOGIN STATES ---
   const [username, setUsername] = useState('');
