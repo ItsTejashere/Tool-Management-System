@@ -18,45 +18,38 @@ public class DBConnection {
                     "WHERE table_schema = DATABASE() AND table_name = 'tool_instance' " +
                     "GROUP BY index_name";
 
-            boolean hasLegacySerialIndex = false;
             boolean hasCompositeSerialIndex = false;
+            String globalIndexName = null;
+            String compositeIndexName = null;
 
             try (ResultSet rs = stmt.executeQuery(indexCheckSql)) {
                 while (rs.next()) {
                     String indexName = rs.getString("index_name");
                     String columns = rs.getString("columns");
-                    if ("serial_number".equals(indexName) || "serial_number_2".equals(indexName)) {
-                        hasLegacySerialIndex = true;
-                    }
                     if ("tool_id,serial_number".equals(columns) || "serial_number,tool_id".equals(columns)) {
                         hasCompositeSerialIndex = true;
+                        compositeIndexName = indexName;
+                    }
+                    if ("serial_number".equals(columns) && !"PRIMARY".equals(indexName)) {
+                        globalIndexName = indexName;
                     }
                 }
             }
 
-            if (hasLegacySerialIndex && !hasCompositeSerialIndex) {
-                try (PreparedStatement dropLegacy = con.prepareStatement("ALTER TABLE tool_instance DROP INDEX serial_number")) {
-                    dropLegacy.execute();
-                } catch (SQLException ignored) {
-                    // The legacy name may already be serial_number_2 or not present in this schema version.
-                }
-
-                try (PreparedStatement dropLegacy2 = con.prepareStatement("ALTER TABLE tool_instance DROP INDEX serial_number_2")) {
-                    dropLegacy2.execute();
-                } catch (SQLException ignored) {
-                    // The second legacy index is optional depending on the schema.
-                }
-
-                try (PreparedStatement addComposite = con.prepareStatement(
-                        "ALTER TABLE tool_instance ADD UNIQUE KEY uq_tool_serial (tool_id, serial_number)")) {
-                    addComposite.execute();
-                }
-            } else if (!hasLegacySerialIndex && !hasCompositeSerialIndex) {
-                try (PreparedStatement addComposite = con.prepareStatement(
-                        "ALTER TABLE tool_instance ADD UNIQUE KEY uq_tool_serial (tool_id, serial_number)")) {
-                    addComposite.execute();
+            if (globalIndexName != null) {
+                try (PreparedStatement dropGlobal = con.prepareStatement(
+                        "ALTER TABLE tool_instance DROP INDEX `" + globalIndexName + "`")) {
+                    dropGlobal.execute();
                 }
             }
+
+            if (!hasCompositeSerialIndex) {
+                try (PreparedStatement addGlobal = con.prepareStatement(
+                        "ALTER TABLE tool_instance ADD UNIQUE KEY uq_tool_serial (tool_id, serial_number)")) {
+                    addGlobal.execute();
+                }
+            }
+
         } catch (SQLException e) {
             // Ignore migration issues during startup; the app will still attempt the insert using the current schema.
             e.printStackTrace();

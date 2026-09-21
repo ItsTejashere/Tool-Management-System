@@ -2,6 +2,7 @@ package com.tms.toolmanagementsystem.controller;
 
 import com.tms.toolmanagementsystem.entity.ToolMovement;
 import com.tms.toolmanagementsystem.repository.MovementRepository;
+import com.tms.toolmanagementsystem.repository.DuplicateSerialException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,12 @@ public class MovementController {
             return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Issue No is required for every new stock serial\"}");
         }
 
-        boolean isRecorded = movementRepository.recordMovement(movement);
+        boolean isRecorded;
+        try {
+            isRecorded = movementRepository.recordMovement(movement);
+        } catch (DuplicateSerialException e) {
+            return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Serial number already exists for this tool. Please enter a different serial number.\"}");
+        }
 
         if (isRecorded) {
             return ResponseEntity.ok("{\"status\": true, \"message\": \"Movement Recorded Successfully\"}");

@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.SecureRandom;
 import com.tms.toolmanagementsystem.util.JwtUtil;
+import com.tms.toolmanagementsystem.util.SessionRegistry;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -48,6 +49,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private SessionRegistry sessionRegistry;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/login")
@@ -70,8 +74,9 @@ public class AuthController {
         }
 
         if (passwordMatches) {
-            // Generate JWT token
-            String token = jwtUtil.generateToken(dbUser);
+            // Replacing this session invalidates the user's previous device immediately.
+            String sessionId = sessionRegistry.startSession(dbUser.getUsername());
+            String token = jwtUtil.generateToken(dbUser, sessionId);
 
             Map<String, Object> resp = new HashMap<>();
             resp.put("status", true);

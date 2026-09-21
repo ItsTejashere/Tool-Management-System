@@ -246,8 +246,8 @@ export default function ToolDetails() {
         setTimeout(() => setMessage(null), 3000);
         setTimeout(() => window.location.reload(), 1500); 
       }
-    } catch {
-      setMessage({ type: 'danger', text: 'Failed to record movement.' });
+    } catch (error) {
+      setMessage({ type: 'danger', text: error.response?.data?.message || 'Failed to record movement.' });
     }
   };
 

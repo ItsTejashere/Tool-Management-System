@@ -56,9 +56,9 @@ export default function AddTool() {
       return;
     }
 
-    const uniqueSerials = new Set(serials);
+    const uniqueSerials = new Set(serials.map(serial => serial.trim().toLowerCase()));
     if (uniqueSerials.size !== serials.length) {
-      alert("You cannot enter duplicate serial numbers for the same tool.");
+      alert("You cannot enter duplicate serial numbers for the same tool. Please enter a different serial number.");
       return;
     }
 
@@ -74,8 +74,8 @@ export default function AddTool() {
         setMessage({ type: 'success', text: response.data.message });
         setTimeout(() => navigate('/dashboard'), 1000);
       }
-    } catch {
-      setMessage({ type: 'danger', text: 'Error connecting to server.' });
+    } catch (error) {
+      setMessage({ type: 'danger', text: error.response?.data?.message || 'Error connecting to server.' });
     }
   };
 

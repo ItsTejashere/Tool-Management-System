@@ -163,14 +163,12 @@ public class ToolRepository {
 
                 // STEP 3: Insert the MANUAL serial numbers
                 if (newToolId != -1 && tool.getSerials() != null && !tool.getSerials().isEmpty()) {
-                    // 🚀 THE FIX: ON DUPLICATE KEY UPDATE brings it back to life instead of crashing!
-                    String sqlInstance = "INSERT INTO tool_instance (tool_id, serial_number, current_status) VALUES (?, ?, 'AVAILABLE') " +
-                            "ON DUPLICATE KEY UPDATE current_status = 'AVAILABLE', tool_id = VALUES(tool_id)";
+                        String sqlInstance = "INSERT INTO tool_instance (tool_id, serial_number, current_status) VALUES (?, ?, 'AVAILABLE')";
 
                     try (PreparedStatement psInstance = con.prepareStatement(sqlInstance)) {
                         for (String manualSerial : tool.getSerials()) {
                             psInstance.setInt(1, newToolId);
-                            psInstance.setString(2, manualSerial); // Serial is back to #2
+                            psInstance.setString(2, manualSerial.trim());
                             psInstance.addBatch();
                         }
                         psInstance.executeBatch();
@@ -184,6 +182,7 @@ public class ToolRepository {
             if (con != null) {
                 try { con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             }
+            if (isDuplicateKeyException(e)) throw new DuplicateSerialException();
             e.printStackTrace();
             return false;
         } finally {
@@ -344,9 +343,7 @@ public class ToolRepository {
 
             // STEP 2: Insert OR Update physical serials
             if (tool.getSerials() != null && !tool.getSerials().isEmpty()) {
-                // 🚀 THE FIX: Added the ON DUPLICATE KEY UPDATE logic here!
-                String sqlInstance = "INSERT INTO tool_instance (tool_id, serial_number, current_status) VALUES (?, ?, 'AVAILABLE') " +
-                        "ON DUPLICATE KEY UPDATE current_status = 'AVAILABLE', tool_id = VALUES(tool_id)";
+                String sqlInstance = "INSERT INTO tool_instance (tool_id, serial_number, current_status) VALUES (?, ?, 'AVAILABLE')";
 
                 try (PreparedStatement psInstance = con.prepareStatement(sqlInstance)) {
                     for (String serial : tool.getSerials()) {
@@ -367,6 +364,7 @@ public class ToolRepository {
             if (con != null) {
                 try { con.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             }
+            if (isDuplicateKeyException(e)) throw new DuplicateSerialException();
             e.printStackTrace();
             return false;
         } finally {
@@ -374,5 +372,17 @@ public class ToolRepository {
                 try { con.setAutoCommit(true); con.close(); } catch (Exception ex) { ex.printStackTrace(); }
             }
         }
+    }
+
+    private boolean isDuplicateKeyException(Exception exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof java.sql.SQLIntegrityConstraintViolationException
+                    || (current.getMessage() != null && current.getMessage().toLowerCase().contains("duplicate"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

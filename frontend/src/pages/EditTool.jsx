@@ -137,6 +137,12 @@ export default function EditTool() {
       return;
     }
 
+    const uniqueSerials = new Set(serials.map(serial => serial.trim().toLowerCase()));
+    if (uniqueSerials.size !== serials.length) {
+      alert("You cannot enter duplicate serial numbers for the same tool. Please enter a different serial number.");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
@@ -149,8 +155,8 @@ export default function EditTool() {
         setMessage({ type: 'success', text: response.data.message });
         setTimeout(() => navigate('/dashboard'), 1000);
       }
-    } catch {
-      setMessage({ type: 'danger', text: 'Error updating tool.' });
+    } catch (error) {
+      setMessage({ type: 'danger', text: error.response?.data?.message || 'Error updating tool.' });
     }
   };
 

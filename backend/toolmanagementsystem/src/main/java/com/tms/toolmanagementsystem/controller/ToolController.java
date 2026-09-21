@@ -2,6 +2,7 @@ package com.tms.toolmanagementsystem.controller;
 
 import com.tms.toolmanagementsystem.entity.Tool;
 import com.tms.toolmanagementsystem.repository.ToolRepository;
+import com.tms.toolmanagementsystem.repository.DuplicateSerialException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
@@ -33,12 +34,15 @@ public class ToolController {
     @CacheEvict(value = "tools", allEntries = true)
     @PostMapping
     public ResponseEntity<?> addTool(@RequestBody Tool tool) {
-        boolean isSaved = toolRepository.saveTool(tool);
+        try {
+            boolean isSaved = toolRepository.saveTool(tool);
 
-        if (isSaved) {
-            return ResponseEntity.ok("{\"status\": true, \"message\": \"Tool Added Successfully\"}");
-        } else {
+            if (isSaved) {
+                return ResponseEntity.ok("{\"status\": true, \"message\": \"Tool Added Successfully\"}");
+            }
             return ResponseEntity.status(500).body("{\"status\": false, \"message\": \"Failed to add tool\"}");
+        } catch (DuplicateSerialException e) {
+            return ResponseEntity.badRequest().body("{\"status\": false, \"message\": \"Serial number already exists for this tool. Please enter a different serial number.\"}");
         }
     }
 
@@ -86,7 +90,14 @@ public class ToolController {
             jakarta.servlet.http.HttpServletRequest request) {
         tool.setToolId(id);
         tool.setChangedBy((String) request.getAttribute("username"));
-        boolean success = toolRepository.updateTool(tool);
+        boolean success;
+        try {
+            success = toolRepository.updateTool(tool);
+        } catch (DuplicateSerialException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                    "status", false,
+                    "message", "Serial number already exists for this tool. Please enter a different serial number."));
+        }
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("status", success);

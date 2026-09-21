@@ -1,6 +1,6 @@
 package com.tms.toolmanagementsystem.Config;
 
-import com.tms.toolmanagementsystem.util.JwtUtil;
+import com.tms.toolmanagementsystem.util.SessionRegistry;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +21,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+    @Autowired
+    private SessionRegistry sessionRegistry;
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // Extract JWT from Authorization header
@@ -40,11 +43,20 @@ public class AuthInterceptor implements HandlerInterceptor {
                     .getBody();
 
             String role = (String) claims.get("role");
+            String username = claims.getSubject();
+            String sessionId = (String) claims.get("sessionId");
             Object plantIdObj = claims.get("plantId");
             Object deptIdObj = claims.get("deptId");
 
             String plantIdStr = plantIdObj != null ? plantIdObj.toString() : "null";
             String deptIdStr = deptIdObj != null ? deptIdObj.toString() : "null";
+
+            if (!sessionRegistry.isActive(username, sessionId)) {
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\": false, \"message\": \"Session expired because this account was logged in on another device.\"}");
+                return false;
+            }
 
             // 🚀 SECURITY CHECK: Non-OWNER users must have assigned plant & dept
             if (!"OWNER".equals(role)) {
@@ -66,7 +78,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             request.setAttribute("userRole", role);
             request.setAttribute("plantId", plantIdStr);
             request.setAttribute("deptId", deptIdStr);
-            request.setAttribute("username", claims.getSubject());
+            request.setAttribute("username", username);
 
             return true;
 

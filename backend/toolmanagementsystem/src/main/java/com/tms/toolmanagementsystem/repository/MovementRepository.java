@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Types;
+import java.util.HashSet;
+import java.util.Set;
 
 @Repository
 public class MovementRepository {
@@ -23,6 +25,19 @@ public class MovementRepository {
 
         Connection con = null;
         try {
+            if ("STOCK_IN".equals(movement.getMovementType())) {
+                Set<String> requestedSerials = new HashSet<>();
+                for (String serial : movement.getSerials()) {
+                    String normalizedSerial = serial == null ? "" : serial.trim().toLowerCase();
+                    if (!requestedSerials.add(normalizedSerial)
+                            || jdbcTemplate.queryForObject(
+                            "SELECT COUNT(*) FROM tool_instance WHERE tool_id = ? AND serial_number = ?",
+                            Integer.class, movement.getToolId(), serial.trim()) > 0) {
+                        throw new DuplicateSerialException();
+                    }
+                }
+            }
+
             con = DBConnection.getConnection();
             // 🚀 Start Transaction
             con.setAutoCommit(false);
@@ -68,12 +83,10 @@ public class MovementRepository {
             if (movement.getSerials() != null && !movement.getSerials().isEmpty()) {
 
                 if ("STOCK_IN".equals(movement.getMovementType())) {
-                    // 🚀 Insert new tool instances with UPSERT for reused serials
-                        String sqlInsert = "INSERT INTO tool_instance (tool_id, serial_number, issue_no, current_status) VALUES (?, ?, ?, 'AVAILABLE') " +
-                            "ON DUPLICATE KEY UPDATE current_status = 'AVAILABLE', issue_no = VALUES(issue_no), tool_id = VALUES(tool_id)";
+                    String sqlInsert = "INSERT INTO tool_instance (tool_id, serial_number, issue_no, current_status) VALUES (?, ?, ?, 'AVAILABLE')";
                     
                         for (int index = 0; index < movement.getSerials().size(); index++) {
-                        jdbcTemplate.update(sqlInsert, movement.getToolId(), movement.getSerials().get(index),
+                        jdbcTemplate.update(sqlInsert, movement.getToolId(), movement.getSerials().get(index).trim(),
                             movement.getIssueNumbers().get(index).trim());
                     }
                 } else {
@@ -101,9 +114,22 @@ public class MovementRepository {
             }
             return true;
         } catch (Exception e) {
+            if (isDuplicateKeyException(e)) throw new DuplicateSerialException();
             e.printStackTrace();
             return false;
         }
+    }
+
+    private boolean isDuplicateKeyException(Exception exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof java.sql.SQLIntegrityConstraintViolationException
+                    || (current.getMessage() != null && current.getMessage().toLowerCase().contains("duplicate"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     // getMovementsByToolId - FIXED to use JdbcTemplate

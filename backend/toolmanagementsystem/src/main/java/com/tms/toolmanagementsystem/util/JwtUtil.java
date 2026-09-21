@@ -19,7 +19,7 @@ public class JwtUtil {
     @Value("${jwt.expirationMs}")
     private long jwtExpirationMs;
 
-    public String generateToken(User user) {
+    public String generateToken(User user, String sessionId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationMs);
 
@@ -28,6 +28,7 @@ public class JwtUtil {
         claims.put("plantId", user.getPlantId() != null ? user.getPlantId() : "null");
         claims.put("deptId", user.getDeptId() != null ? user.getDeptId() : "null");
         claims.put("username", user.getUsername());
+        claims.put("sessionId", sessionId);
 
         return Jwts.builder()
                 .setClaims(claims)
