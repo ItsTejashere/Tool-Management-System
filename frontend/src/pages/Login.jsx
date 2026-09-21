@@ -55,6 +55,11 @@ export default function Login() {
         if (response.data.token) {
           localStorage.setItem('token', response.data.token);
           axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+          if (typeof BroadcastChannel !== 'undefined') {
+            const sessionChannel = new BroadcastChannel('tms-session');
+            sessionChannel.postMessage({ type: 'session-replaced' });
+            sessionChannel.close();
+          }
         }
 
         // Clear any previous user assignment state first
