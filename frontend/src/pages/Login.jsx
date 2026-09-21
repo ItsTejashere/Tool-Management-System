@@ -246,9 +246,12 @@ export default function Login() {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-lg w-100 fw-bold rounded-pill shadow-sm mb-3" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Sign In"}
-            </button>
+            <div className={`sign-in-door ${isLoading ? 'is-opening' : ''}`}>
+              <button type="submit" className="btn btn-primary btn-lg w-100 fw-bold rounded-pill shadow-sm mb-3 sign-in-button" disabled={isLoading}>
+                <span className="door-panel" aria-hidden="true"><span className="door-knob" /></span>
+                <span className="door-label">{isLoading ? "Signing In..." : "Sign In"}</span>
+              </button>
+            </div>
             
             <div className="text-center">
               <button type="button" className="btn btn-link text-decoration-none small fw-semibold" onClick={() => setCurrentStep('FORGOT_PASS')}>
