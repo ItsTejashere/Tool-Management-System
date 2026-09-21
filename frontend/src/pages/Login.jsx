@@ -10,9 +10,14 @@ export default function Login() {
   // --- UI STATE MACHINE ---
   const [currentStep, setCurrentStep] = useState('LOGIN'); 
   const [message, setMessage] = useState(() => {
-    const authMessage = sessionStorage.getItem('authMessage');
-    sessionStorage.removeItem('authMessage');
-    return authMessage || '';
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason === 'session-conflict') {
+      return 'Session expired or this account was logged in on another device. Please log in again.';
+    }
+    if (reason === 'session-expired') {
+      return 'Session expired. Please log in again.';
+    }
+    return '';
   });
 
   // --- LOGIN STATES ---
@@ -75,7 +80,7 @@ export default function Login() {
         
         // Send every role through the same workspace flow so OWNER sees the full inventory dashboard.
         const nextRoute = '/plant-selection';
-        setTimeout(() => navigate(nextRoute), 1000);
+        setTimeout(() => navigate(nextRoute), 8000);
         
       } else {
         setMessage('Error: Invalid Credentials');

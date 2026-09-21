@@ -24,19 +24,13 @@ axios.interceptors.response.use(
     );
 
     if (isSessionFailure) {
-      sessionStorage.setItem(
-        'authMessage',
-        responseMessage.includes('logged in on another device')
-          ? 'Session expired or this account was logged in on another device. Please log in again.'
-          : 'Session expired. Please log in again.'
-      );
+      const reason = responseMessage.includes('logged in on another device')
+        ? 'session-conflict'
+        : 'session-expired';
       localStorage.clear();
       sessionStorage.clear();
-      sessionStorage.setItem('authMessage', responseMessage.includes('logged in on another device')
-        ? 'Session expired or this account was logged in on another device. Please log in again.'
-        : 'Session expired. Please log in again.');
       delete axios.defaults.headers.common['Authorization'];
-      window.location.href = '/login';
+      window.location.href = `/login?reason=${reason}`;
     }
     return Promise.reject(error);
   }
